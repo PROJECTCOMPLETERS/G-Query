@@ -3,13 +3,14 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.router import api_router
 from app.core.config import settings
-from app.core.logging import setup_logging
 from app.core.exceptions import (
     SatQueryException,
     satquery_exception_handler,
 )
-from app.api.router import api_router
+from app.core.logging import setup_logging
+from app.database.connection import connect_to_mongodb
 
 
 setup_logging()
@@ -36,6 +37,11 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.on_event("startup")
+def startup():
+    connect_to_mongodb()
 
 
 @app.get("/api/health")

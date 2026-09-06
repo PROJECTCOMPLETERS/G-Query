@@ -3,9 +3,10 @@ from uuid import uuid4
 
 from fastapi import UploadFile
 
+import app.database.connection as db
 from app.core.config import settings
 from app.core.exceptions import SatQueryException
-from app.services.file_storage_service import FileStorageService
+from app.services.gridfs_service import GridFSService
 
 
 ALLOWED_EXTENSIONS = {
@@ -20,12 +21,17 @@ CHUNK_SIZE = 1024 * 1024  # 1 MB
 
 
 def generate_dataset_id() -> str:
-    """Generate a unique dataset ID."""
+    """Generate a unique SatQuery dataset ID."""
     return f"sat_{uuid4().hex[:8]}"
 
 
-async def save_uploaded_file(file: UploadFile) -> tuple[str, str]:
-    """Validate an uploaded file and save it to local storage."""
+async def save_uploaded_file(file: UploadFile) -> tuple[str, str, int]:
+    """
+    Validate and stream an uploaded file directly into GridFS.
+
+    Returns:
+        dataset_id, gridfs_file_id, total_size
+    """
 
     if not file.filename:
         raise SatQueryException(
@@ -46,41 +52,58 @@ async def save_uploaded_file(file: UploadFile) -> tuple[str, str]:
             status_code=415,
         )
 
+    if db.database is None:
+        raise RuntimeError("MongoDB is not connected.")
+
     max_size = settings.max_upload_size_mb * 1024 * 1024
 
     dataset_id = generate_dataset_id()
-    saved_filename = f"{dataset_id}{extension}"
 
-    storage = FileStorageService()
-    file_path = storage.get_file(saved_filename)
+    gridfs_service = GridFSService(db.database)
+
+    upload_stream = gridfs_service.create_upload_stream(
+        filename=file.filename,
+        content_type=file.content_type,
+    )
 
     total_size = 0
 
     try:
-        with file_path.open("wb") as destination:
-            while True:
-                chunk = await file.read(CHUNK_SIZE)
+        while True:
+            chunk = await file.read(CHUNK_SIZE)
 
-                if not chunk:
-                    break
+            if not chunk:
+                break
 
-                total_size += len(chunk)
+            total_size += len(chunk)
 
-                if total_size > max_size:
-                    raise SatQueryException(
-                        message=(
-                            f"File size exceeds the "
-                            f"{settings.max_upload_size_mb} MB limit."
-                        ),
-                        code="FILE_TOO_LARGE",
-                        status_code=413,
-                    )
+            if total_size > max_size:
+                upload_stream.abort()
 
-                destination.write(chunk)
+                raise SatQueryException(
+                    message=(
+                        f"File size exceeds the "
+                        f"{settings.max_upload_size_mb} MB limit."
+                    ),
+                    code="FILE_TOO_LARGE",
+                    status_code=413,
+                )
+
+            upload_stream.write(chunk)
+
+        upload_stream.close()
 
     except SatQueryException:
-        if file_path.exists():
-            file_path.unlink()
         raise
 
-    return dataset_id, str(file_path)
+    except Exception as exc:
+        try:
+            upload_stream.abort()
+        except Exception:
+            pass
+
+        raise RuntimeError(
+            f"Failed to store file in GridFS: {exc}"
+        ) from exc
+
+    return dataset_id, str(upload_stream._id), total_size

@@ -18,7 +18,6 @@ def connect_to_mongodb() -> None:
             serverSelectionTimeoutMS=5000,
         )
 
-        # Force a connection check
         client.admin.command("ping")
 
         database = client[settings.mongodb_db_name]
@@ -42,6 +41,7 @@ def close_mongodb_connection() -> None:
 
     client = None
     database = None
+
 
 def get_datasets_collection():
     """Return the datasets MongoDB collection."""
