@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     allowed_origins: str = "*"
     max_upload_size_mb: int = 500
 
+    mongodb_uri: str
+    mongodb_db_name: str = "satquery"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

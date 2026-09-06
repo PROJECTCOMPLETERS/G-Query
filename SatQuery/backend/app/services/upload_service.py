@@ -5,9 +5,8 @@ from fastapi import UploadFile
 
 from app.core.config import settings
 from app.core.exceptions import SatQueryException
+from app.services.file_storage_service import FileStorageService
 
-
-UPLOAD_DIR = Path("storage/uploads")
 
 ALLOWED_EXTENSIONS = {
     ".jpg",
@@ -26,7 +25,7 @@ def generate_dataset_id() -> str:
 
 
 async def save_uploaded_file(file: UploadFile) -> tuple[str, str]:
-    """Validate and stream an uploaded file to disk."""
+    """Validate an uploaded file and save it to local storage."""
 
     if not file.filename:
         raise SatQueryException(
@@ -49,11 +48,11 @@ async def save_uploaded_file(file: UploadFile) -> tuple[str, str]:
 
     max_size = settings.max_upload_size_mb * 1024 * 1024
 
-    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-
     dataset_id = generate_dataset_id()
     saved_filename = f"{dataset_id}{extension}"
-    file_path = UPLOAD_DIR / saved_filename
+
+    storage = FileStorageService()
+    file_path = storage.get_file(saved_filename)
 
     total_size = 0
 

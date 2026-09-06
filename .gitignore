@@ -222,3 +222,6 @@ node_modules/
 dist/
 build/
 *.log
+
+# SatQuery local storage
+/SatQuery/backend/storage/
