@@ -22,6 +22,10 @@ from data_engine.geospatial.crs import (
 from data_engine.geospatial.coordinates import (
     transform_coordinate,
 )
+from data_engine.geospatial.bounding_box import (
+    create_bounding_box,
+    validate_bounding_box,
+)
 
 def test_geotiff_metadata(tmp_path: Path):
     path = tmp_path / "sample.tif"
@@ -385,4 +389,92 @@ def test_coordinate_transformation_invalid_crs():
             13.0750,
             "EPSG:4326",
             "EPSG:999999",
+        )
+# -------------------------------------------------------------------
+# Bounding-box tests
+# -------------------------------------------------------------------
+
+
+def test_create_bounding_box():
+    """A valid geographic bounding box should be created."""
+
+    bounds = create_bounding_box(
+        80.0,
+        13.0,
+        80.5,
+        13.5,
+    )
+
+    assert bounds == {
+        "west": 80.0,
+        "south": 13.0,
+        "east": 80.5,
+        "north": 13.5,
+    }
+
+
+def test_validate_bounding_box():
+    """A valid bounding box should pass validation."""
+
+    result = validate_bounding_box(
+        {
+            "west": 80.0,
+            "south": 13.0,
+            "east": 80.5,
+            "north": 13.5,
+        }
+    )
+
+    assert result["valid"] is True
+    assert result["bounds"]["west"] == 80.0
+    assert result["bounds"]["north"] == 13.5
+    assert result["reason"] is None
+
+
+def test_bounding_box_missing():
+    """Missing bounds should remain explicitly unavailable."""
+
+    result = validate_bounding_box(None)
+
+    assert result["valid"] is False
+    assert result["bounds"] is None
+
+
+def test_bounding_box_invalid_order():
+    """West/east or south/north ordering should be validated."""
+
+    with pytest.raises(ValueError):
+        create_bounding_box(
+            81.0,
+            13.0,
+            80.0,
+            13.5,
+        )
+
+    with pytest.raises(ValueError):
+        create_bounding_box(
+            80.0,
+            14.0,
+            80.5,
+            13.0,
+        )
+
+
+def test_bounding_box_invalid_coordinates():
+    """Longitude and latitude limits should be enforced."""
+
+    with pytest.raises(ValueError):
+        create_bounding_box(
+            181.0,
+            13.0,
+            182.0,
+            13.5,
+        )
+
+    with pytest.raises(ValueError):
+        create_bounding_box(
+            80.0,
+            91.0,
+            80.5,
+            92.0,
         )
