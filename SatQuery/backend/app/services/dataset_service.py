@@ -1,4 +1,6 @@
+from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from app.database.connection import get_datasets_collection
 from app.database.repositories.dataset_repository import DatasetRepository
@@ -12,18 +14,51 @@ class DatasetService:
         collection = get_datasets_collection()
         self.repository = DatasetRepository(collection)
 
-    def create_dataset(self, dataset: DatasetCreate) -> str:
-        """Create and persist a dataset."""
-        return self.repository.create(dataset)
+    def create_dataset(self, data: DatasetCreate) -> dict[str, Any]:
+        """Create a new dataset record."""
+        now = datetime.now(timezone.utc)
 
-    def get_dataset(self, dataset_id: str) -> dict[str, Any] | None:
-        """Retrieve a dataset by its SatQuery dataset ID."""
-        return self.repository.get_by_dataset_id(dataset_id)
+        dataset_id = f"ds_{uuid4().hex[:8]}"
 
-    def update_dataset(
+        document = {
+            "dataset_id": dataset_id,
+            "name": data.name,
+            "dataset_type": data.dataset_type,
+            "observations": [],
+            "files": [],
+            "processing": {
+                "status": "uploading",
+                "created_at": now,
+                "updated_at": now,
+            },
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        self.repository.create(document)
+
+        return document
+
+    def get_dataset(
         self,
         dataset_id: str,
-        updates: dict[str, Any],
+    ) -> dict[str, Any] | None:
+        return self.repository.get_by_dataset_id(dataset_id)
+
+    def list_datasets(
+        self,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[dict[str, Any]], int]:
+        skip = (page - 1) * page_size
+
+        return self.repository.list_datasets(
+            skip=skip,
+            limit=page_size,
+        )
+
+    def delete_dataset(
+        self,
+        dataset_id: str,
     ) -> bool:
-        """Update an existing dataset."""
-        return self.repository.update(dataset_id, updates)
+        return self.repository.delete(dataset_id)
