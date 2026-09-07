@@ -222,3 +222,6 @@ node_modules/
 dist/
 build/
 *.log
+# Large satellite datasets
+datasets/*.tif
+datasets/*.tiff
