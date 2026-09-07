@@ -19,6 +19,10 @@ from data_engine.geospatial.crs import (
     validate_crs,
 )
 
+from data_engine.geospatial.coordinates import (
+    transform_coordinate,
+)
+
 def test_geotiff_metadata(tmp_path: Path):
     path = tmp_path / "sample.tif"
     transform = from_origin(80.0, 13.1, 0.001, 0.001)
@@ -307,3 +311,78 @@ def test_crs_validation():
     assert result["valid"] is True
     assert result["crs"] == "EPSG:32644"
     assert result["reason"] is None
+
+# -------------------------------------------------------------------
+# Coordinate transformation tests
+# -------------------------------------------------------------------
+
+
+def test_coordinate_transformation_wgs84_to_utm():
+    """WGS84 longitude/latitude should transform to UTM coordinates."""
+
+    x, y = transform_coordinate(
+        80.2249,
+        13.0750,
+        "EPSG:4326",
+        "EPSG:32644",
+    )
+
+    assert isinstance(x, float)
+    assert isinstance(y, float)
+
+    # Chennai-area coordinates should transform to UTM zone 44N.
+    assert 100000 < x < 900000
+    assert 0 < y < 10000000
+
+
+def test_coordinate_transformation_utm_to_wgs84():
+    """UTM coordinates should transform to WGS84."""
+
+    longitude, latitude = transform_coordinate(
+        415970.10,
+        1445558.30,
+        "EPSG:32644",
+        "EPSG:4326",
+    )
+
+    assert isinstance(longitude, float)
+    assert isinstance(latitude, float)
+
+    assert longitude == pytest.approx(80.2249, abs=1e-4)
+    assert latitude == pytest.approx(13.0750, abs=1e-4)
+
+
+def test_coordinate_transformation_round_trip():
+    """Transforming WGS84 -> UTM -> WGS84 should preserve the point."""
+
+    original_x = 80.2249
+    original_y = 13.0750
+
+    utm_x, utm_y = transform_coordinate(
+        original_x,
+        original_y,
+        "EPSG:4326",
+        "EPSG:32644",
+    )
+
+    result_x, result_y = transform_coordinate(
+        utm_x,
+        utm_y,
+        "EPSG:32644",
+        "EPSG:4326",
+    )
+
+    assert result_x == pytest.approx(original_x, abs=1e-5)
+    assert result_y == pytest.approx(original_y, abs=1e-5)
+
+
+def test_coordinate_transformation_invalid_crs():
+    """An invalid CRS should raise a clear ValueError."""
+
+    with pytest.raises(ValueError):
+        transform_coordinate(
+            80.2249,
+            13.0750,
+            "EPSG:4326",
+            "EPSG:999999",
+        )
