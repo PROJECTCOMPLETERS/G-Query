@@ -13,7 +13,11 @@ from data_engine.ingestion import (
     extract_metadata,
     validate_file,
 )
-
+from data_engine.geospatial.crs import (
+    has_crs,
+    normalize_crs,
+    validate_crs,
+)
 
 def test_geotiff_metadata(tmp_path: Path):
     path = tmp_path / "sample.tif"
@@ -268,3 +272,38 @@ def test_controller_unsupported_file_type(tmp_path: Path):
 
     with pytest.raises(DataEngineError):
         process_file(path)
+
+# -------------------------------------------------------------------
+# CRS tests
+# -------------------------------------------------------------------
+
+
+def test_crs_normalization():
+    """CRS strings should be normalized consistently."""
+
+    assert normalize_crs("EPSG:32644") == "EPSG:32644"
+    assert normalize_crs("epsg:4326") == "EPSG:4326"
+
+
+def test_crs_missing():
+    """Missing CRS should remain explicitly unavailable."""
+
+    assert normalize_crs(None) is None
+    assert has_crs(None) is False
+
+    result = validate_crs(None)
+
+    assert result["valid"] is False
+    assert result["crs"] is None
+
+
+def test_crs_validation():
+    """A valid CRS should pass validation."""
+
+    assert has_crs("EPSG:32644") is True
+
+    result = validate_crs("EPSG:32644")
+
+    assert result["valid"] is True
+    assert result["crs"] == "EPSG:32644"
+    assert result["reason"] is None
