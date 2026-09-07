@@ -1,8 +1,18 @@
+import logo from "../../assets/satquery-logo.jpeg";
+
 const Navbar = () => {
   return (
     <nav className="navbar">
       <div className="logo">
-        🛰️ SatQuery <span>AI</span>
+        <img
+          src={logo}
+          alt="SatQuery AI logo"
+          className="navbar-logo-image"
+        />
+
+        <span className="logo-name">
+          SatQuery <strong>AI</strong>
+        </span>
       </div>
 
       <div className="nav-links">

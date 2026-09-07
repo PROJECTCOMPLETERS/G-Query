@@ -1,94 +1,207 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Navbar from "../components/layout/Navbar";
 import QueryInput from "../components/query/QueryInput";
 import QueryStatus from "../components/query/QueryStatus";
-import ResultPanel from "../components/results/ResultPanel";
+import SuggestedQueries from "../components/query/SuggestedQueries";
+
+import ResultPanel, {
+  type ChatMessage,
+} from "../components/results/ResultPanel";
+
+import {
+  getDataset,
+  submitQuery,
+  uploadSatelliteFile,
+} from "../api/datasetApi";
+
+import { runMockAnalysis } from "../components/services/mockAnalysis";
 
 const Home = () => {
-  const [query, setQuery] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
 
-  const handleAnalyze = (
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const previewUrlsRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, analyzing]);
+
+  useEffect(() => {
+    return () => {
+      previewUrlsRef.current.forEach((url) => {
+        URL.revokeObjectURL(url);
+      });
+    };
+  }, []);
+
+  const addMessage = (message: ChatMessage) => {
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      message,
+    ]);
+  };
+
+  const handleAnalyze = async (
     userQuery: string,
     file: File | null
   ) => {
-    setQuery(userQuery);
-    setSelectedFile(file);
+    if (analyzing) return;
 
+    const cleanedQuery = userQuery.trim();
+
+    const displayedQuery =
+      cleanedQuery ||
+      "Analyze this satellite image.";
+
+    let imageUrl: string | undefined;
+
+    if (file && !/\.(tif|tiff)$/i.test(file.name)) {
+      imageUrl = URL.createObjectURL(file);
+      previewUrlsRef.current.push(imageUrl);
+    }
+
+    const messageId = Date.now();
+
+    const userMessage: ChatMessage = {
+      id: messageId,
+      role: "user",
+      content: displayedQuery,
+      fileName: file?.name,
+      imageUrl,
+    };
+
+    addMessage(userMessage);
     setAnalyzing(true);
 
-    // Temporary frontend simulation
-    setTimeout(() => {
+    try {
+      let datasetId: string | undefined;
+      let uploadedDataset = undefined;
+
+      /*
+       * REAL BACKEND FLOW
+       */
+
+      if (file) {
+        const uploadResponse =
+          await uploadSatelliteFile(file);
+
+        if (!uploadResponse.success) {
+          throw new Error(
+            uploadResponse.message ||
+              "Satellite image upload failed."
+          );
+        }
+
+        datasetId = uploadResponse.dataset_id;
+        uploadedDataset = uploadResponse.dataset;
+
+        if (!uploadedDataset && datasetId) {
+          uploadedDataset =
+            await getDataset(datasetId);
+        }
+      }
+
+      if (cleanedQuery) {
+        const queryResponse = await submitQuery(
+          cleanedQuery,
+          datasetId
+        );
+
+        if (!queryResponse.success) {
+          throw new Error(
+            "SatQuery could not process this query."
+          );
+        }
+
+        const assistantMessage: ChatMessage = {
+          id: messageId + 1,
+          role: "assistant",
+          content: queryResponse.answer,
+          dataset:
+            queryResponse.dataset ||
+            uploadedDataset,
+          demoMode: false,
+        };
+
+        addMessage(assistantMessage);
+      } else {
+        const assistantMessage: ChatMessage = {
+          id: messageId + 1,
+          role: "assistant",
+          content:
+            "Satellite image uploaded successfully. The dataset information is shown below.",
+          dataset: uploadedDataset,
+          demoMode: false,
+        };
+
+        addMessage(assistantMessage);
+      }
+    } catch {
+      /*
+       * DEMO MODE FALLBACK
+       *
+       * Backend unavailable / request failed na
+       * error kaattaama built-in demo response use pannum.
+       */
+
+      const demoResponse = await runMockAnalysis(
+        displayedQuery,
+        file
+      );
+
+      const demoMessage: ChatMessage = {
+        id: messageId + 1,
+        role: "assistant",
+        content: demoResponse.answer,
+        dataset: demoResponse.dataset,
+        demoMode: true,
+      };
+
+      addMessage(demoMessage);
+    } finally {
       setAnalyzing(false);
-    }, 2000);
+    }
   };
 
   return (
     <div className="app">
-
       <Navbar />
 
-      <main className="main-container">
+      <main className="chat-page">
+        <div className="chat-scroll">
+          {messages.length === 0 ? (
+            <section className="welcome-section">
+              <h1>How can SatQuery help?</h1>
 
-        <section className="hero">
-          <h1>Query-Driven Earth Observation</h1>
+              <p>
+                Upload satellite imagery or ask a question
+                to explore Earth observation data.
+              </p>
 
-          <p>
-            Ask questions about satellite imagery using
-            natural language.
-          </p>
-        </section>
+              <SuggestedQueries
+                onSelect={(selectedQuery) =>
+                  handleAnalyze(selectedQuery, null)
+                }
+              />
+            </section>
+          ) : (
+            <ResultPanel messages={messages} />
+          )}
 
-        <div className="workspace">
+          <QueryStatus analyzing={analyzing} />
 
-          <div className="left-panel">
-
-            <QueryInput
-              onAnalyze={handleAnalyze}
-            />
-
-            <QueryStatus
-              analyzing={analyzing}
-            />
-
-            <div className="map-container">
-
-              <div className="map-placeholder">
-                <span>🗺️</span>
-
-                <h2>Satellite Map</h2>
-
-                <p>
-                  Satellite imagery and evidence
-                  will appear here.
-                </p>
-
-                {selectedFile && (
-                  <small>
-                    Uploaded: {selectedFile.name}
-                  </small>
-                )}
-
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="right-panel">
-
-            <ResultPanel
-              query={query}
-            />
-
-          </div>
-
+          <div ref={chatEndRef} />
         </div>
 
+        <QueryInput
+          onAnalyze={handleAnalyze}
+          analyzing={analyzing}
+        />
       </main>
-
     </div>
   );
 };
