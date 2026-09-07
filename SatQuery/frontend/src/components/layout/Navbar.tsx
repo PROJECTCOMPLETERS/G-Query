@@ -11,9 +11,10 @@ const Navbar = () => {
         />
 
         <span className="logo-name">
-          SatQuery <strong>AI</strong>
+          G-Query <strong>AI</strong>
         </span>
       </div>
+.
 
       <div className="nav-links">
         <a href="#">Home</a>
