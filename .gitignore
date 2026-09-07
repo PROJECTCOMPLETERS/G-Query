@@ -54,6 +54,14 @@ cover/
 # Translations
 *.mo
 *.pot
+# Pytest temporary files
+SatQuery/.pytest_tmp/
+SatQuery/.pytest_cache/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
 
 # Django stuff:
 *.log
@@ -222,6 +230,6 @@ node_modules/
 dist/
 build/
 *.log
-
-# SatQuery local storage
-/SatQuery/backend/storage/
+# Large satellite datasets
+datasets/*.tif
+datasets/*.tiff
