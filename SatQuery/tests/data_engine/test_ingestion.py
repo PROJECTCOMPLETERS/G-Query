@@ -13,6 +13,11 @@ from data_engine.ingestion import (
     extract_metadata,
     validate_file,
 )
+from data_engine.geospatial.geometry import (
+    extract_resolution,
+    transform_to_dict,
+    validate_resolution,
+)
 from data_engine.geospatial.crs import (
     has_crs,
     normalize_crs,
@@ -478,3 +483,67 @@ def test_bounding_box_invalid_coordinates():
             80.5,
             92.0,
         )
+# -------------------------------------------------------------------
+# Resolution and affine-transform tests
+# -------------------------------------------------------------------
+
+
+def test_extract_resolution():
+    """Raster resolution should be extracted from an affine transform."""
+
+    transform = from_origin(
+        80.0,
+        13.1,
+        10.0,
+        10.0,
+    )
+
+    resolution = extract_resolution(transform)
+
+    assert resolution == (10.0, 10.0)
+
+
+def test_transform_to_dict():
+    """Affine transform should be converted to a standard dictionary."""
+
+    transform = from_origin(
+        80.0,
+        13.1,
+        10.0,
+        10.0,
+    )
+
+    result = transform_to_dict(transform)
+
+    assert result["a"] == 10.0
+    assert result["e"] == -10.0
+    assert result["c"] == 80.0
+    assert result["f"] == 13.1
+
+
+def test_validate_resolution():
+    """A valid raster resolution should pass validation."""
+
+    result = validate_resolution([10.0, 10.0])
+
+    assert result["valid"] is True
+    assert result["resolution"] == [10.0, 10.0]
+    assert result["reason"] is None
+
+
+def test_validate_resolution_invalid():
+    """Invalid raster resolutions should be rejected."""
+
+    result = validate_resolution([0, 10])
+
+    assert result["valid"] is False
+    assert result["resolution"] is None
+
+
+def test_validate_resolution_missing():
+    """Missing resolution should remain explicitly unavailable."""
+
+    result = validate_resolution(None)
+
+    assert result["valid"] is False
+    assert result["resolution"] is None
