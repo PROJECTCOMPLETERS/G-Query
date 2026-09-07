@@ -1,54 +1,114 @@
-interface ResultPanelProps {
-  query: string;
+import DatasetInfo from "./DatasetInfo";
+import MapView from "../map/MapView";
+
+import type { Dataset } from "../../types/dataset";
+
+export interface ChatMessage {
+  id: number;
+  role: "user" | "assistant";
+  content: string;
+  fileName?: string;
+  imageUrl?: string;
+  dataset?: Dataset;
+  error?: boolean;
+  demoMode?: boolean;
 }
 
-const ResultPanel = ({ query }: ResultPanelProps) => {
-  if (!query) {
-    return (
-      <div className="result-panel empty">
-        <h2>Analysis Result</h2>
-        <p>Enter a query to start satellite analysis.</p>
-      </div>
-    );
-  }
+interface ResultPanelProps {
+  messages: ChatMessage[];
+}
+
+const ResultPanel = ({
+  messages,
+}: ResultPanelProps) => {
+  const copyResponse = async (
+    content: string
+  ) => {
+    try {
+      await navigator.clipboard.writeText(content);
+    } catch {
+      console.error("Unable to copy response");
+    }
+  };
 
   return (
-    <div className="result-panel">
-      <h2>🧠 Analysis Result</h2>
+    <div className="conversation">
+      {messages.map((message) => (
+        <article
+          key={message.id}
+          className={`message ${message.role} ${
+            message.error ? "error-message" : ""
+          }`}
+        >
+          <div className="message-avatar">
+            {message.role === "user" ? "P" : "🛰️"}
+          </div>
 
-      <div className="query-display">
-        <strong>Query:</strong>
-        <p>{query}</p>
-      </div>
+          <div className="message-content">
+            <strong>
+              {message.role === "user"
+                ? "You"
+                : "SatQuery AI"}
+            </strong>
 
-      <div className="status">
-        <span>●</span> Query received
-      </div>
+            {message.demoMode && (
+              <span className="response-demo-badge">
+                Demo Mode
+              </span>
+            )}
 
-      <div className="evidence">
-        <h3>Evidence</h3>
+            {message.imageUrl && (
+              <img
+                className="message-image"
+                src={message.imageUrl}
+                alt={
+                  message.fileName ||
+                  "Uploaded satellite image"
+                }
+              />
+            )}
 
-        <div className="evidence-item">
-          ✓ Visual analysis
-        </div>
+            {message.fileName &&
+              !message.imageUrl && (
+                <div className="message-file">
+                  📎 {message.fileName}
+                </div>
+              )}
 
-        <div className="evidence-item">
-          ✓ Temporal analysis
-        </div>
+            {message.content && (
+              <p>{message.content}</p>
+            )}
 
-        <div className="evidence-item">
-          ✓ SAR analysis
-        </div>
+            {message.dataset && (
+              <>
+                <DatasetInfo
+                  dataset={message.dataset}
+                />
 
-        <div className="evidence-item">
-          ✓ Optical analysis
-        </div>
-      </div>
+                <MapView
+                  spatial={message.dataset.spatial}
+                  demoMode={message.demoMode}
+                />
+              </>
+            )}
 
-      <div className="confidence">
-        <span>Confidence</span>
-        <strong>--</strong>
-      </div>
+            {message.role === "assistant" &&
+              !message.error && (
+                <div className="message-actions">
+                  <button
+                    type="button"
+                    className="message-action"
+                    onClick={() =>
+                      copyResponse(message.content)
+                    }
+                  >
+                    Copy response
+                  </button>
+                </div>
+              )}
+          </div>
+        </article>
+      ))}
     </div>
   );
 };
