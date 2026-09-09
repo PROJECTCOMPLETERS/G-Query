@@ -5,7 +5,7 @@ interface FileUploaderProps {
   onFileSelect: (file: File | null) => void;
 }
 
-const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const MAX_FILE_SIZE = 60 * 1024 * 1024;
 
 const ALLOWED_EXTENSIONS = [
   "jpg",
