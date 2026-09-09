@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.core.exceptions import SatQueryException
@@ -12,6 +13,27 @@ app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
 )
+
+
+# ============================================================
+# CORS
+# ============================================================
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ============================================================
+# SatQuery Exception Handler
+# ============================================================
+
 @app.exception_handler(SatQueryException)
 async def satquery_exception_handler(
     request: Request,
@@ -32,6 +54,12 @@ async def satquery_exception_handler(
             }
         },
     )
+
+
+# ============================================================
+# Request Validation Exception Handler
+# ============================================================
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(
     request: Request,
@@ -47,6 +75,12 @@ async def validation_exception_handler(
             }
         },
     )
+
+
+# ============================================================
+# API Router
+# ============================================================
+
 app.include_router(
     api_router,
     prefix=settings.api_prefix,

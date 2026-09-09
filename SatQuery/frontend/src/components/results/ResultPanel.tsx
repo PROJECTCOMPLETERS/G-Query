@@ -86,7 +86,7 @@ const ResultPanel = ({
                 />
 
                 <MapView
-                  spatial={message.dataset.spatial}
+                  dataset={message.dataset}
                   demoMode={message.demoMode}
                 />
               </>

@@ -6,36 +6,51 @@ interface FileUploaderProps {
 }
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
-const ALLOWED_EXTENSIONS = ["jpg", "jpeg", "png", "tif", "tiff"];
+
+const ALLOWED_EXTENSIONS = [
+  "jpg",
+  "jpeg",
+  "png",
+  "tif",
+  "tiff",
+];
 
 const FileUploader = ({
   file,
   onFileSelect,
 }: FileUploaderProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
+
   const [error, setError] = useState("");
   const [previewUrl, setPreviewUrl] = useState("");
 
   useEffect(() => {
+    // GeoTIFF files are not previewed directly in the browser.
     if (!file || /\.(tif|tiff)$/i.test(file.name)) {
       setPreviewUrl("");
       return;
     }
 
     const objectUrl = URL.createObjectURL(file);
+
     setPreviewUrl(objectUrl);
 
-    return () => URL.revokeObjectURL(objectUrl);
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
   }, [file]);
 
   const handleFile = (selectedFile?: File) => {
-    if (!selectedFile) return;
+    if (!selectedFile) {
+      return;
+    }
 
     const extension = selectedFile.name
       .split(".")
       .pop()
       ?.toLowerCase();
 
+    // Validate file extension.
     if (
       !extension ||
       !ALLOWED_EXTENSIONS.includes(extension)
@@ -43,16 +58,20 @@ const FileUploader = ({
       setError(
         "Only JPG, PNG and GeoTIFF files are supported."
       );
+
       onFileSelect(null);
       return;
     }
 
+    // Validate file size.
     if (selectedFile.size > MAX_FILE_SIZE) {
       setError("File size must be below 50 MB.");
+
       onFileSelect(null);
       return;
     }
 
+    // File is valid.
     setError("");
     onFileSelect(selectedFile);
   };
@@ -60,6 +79,7 @@ const FileUploader = ({
   const removeFile = () => {
     onFileSelect(null);
     setError("");
+    setPreviewUrl("");
 
     if (inputRef.current) {
       inputRef.current.value = "";
@@ -79,11 +99,20 @@ const FileUploader = ({
       <input
         ref={inputRef}
         type="file"
-        accept=".jpg,.jpeg,.png,.tif,.tiff,image/jpeg,image/png,image/tiff"
+        accept="
+          .jpg,
+          .jpeg,
+          .png,
+          .tif,
+          .tiff,
+          image/jpeg,
+          image/png,
+          image/tiff
+        "
         hidden
-        onChange={(event) =>
-          handleFile(event.target.files?.[0])
-        }
+        onChange={(event) => {
+          handleFile(event.target.files?.[0]);
+        }}
       />
 
       <button
@@ -105,12 +134,17 @@ const FileUploader = ({
               className="selected-file-preview"
             />
           ) : (
-            <div className="selected-file-icon">🛰️</div>
+            <div className="selected-file-icon">
+              🛰️
+            </div>
           )}
 
           <div className="selected-file-details">
             <strong>{file.name}</strong>
-            <span>{formatFileSize(file.size)}</span>
+
+            <span>
+              {formatFileSize(file.size)}
+            </span>
           </div>
 
           <button
@@ -124,7 +158,11 @@ const FileUploader = ({
         </div>
       )}
 
-      {error && <p className="file-error">{error}</p>}
+      {error && (
+        <p className="file-error">
+          {error}
+        </p>
+      )}
     </div>
   );
 };

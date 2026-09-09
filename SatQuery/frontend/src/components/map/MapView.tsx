@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 import * as maplibregl from "maplibre-gl";
 import type { GeoJSONSourceSpecification } from "maplibre-gl";
@@ -12,14 +17,18 @@ import {
   ROADS_GEOJSON,
 } from "../data/demoData";
 
-import type {
-  SpatialBounds,
-  SpatialInformation,
-} from "../../types/dataset";
+import type { Dataset } from "../../types/dataset";
 
 interface MapViewProps {
-  spatial?: SpatialInformation | null;
+  dataset: Dataset;
   demoMode?: boolean;
+}
+
+interface MapBounds {
+  min_x: number;
+  min_y: number;
+  max_x: number;
+  max_y: number;
 }
 
 interface LayerVisibility {
@@ -31,8 +40,8 @@ interface LayerVisibility {
 }
 
 const isValidBounds = (
-  value?: SpatialBounds | null
-): value is SpatialBounds => {
+  value?: MapBounds | null
+): value is MapBounds => {
   if (!value) return false;
 
   return [
@@ -44,7 +53,7 @@ const isValidBounds = (
 };
 
 const createDatasetGeoJSON = (
-  datasetBounds: SpatialBounds
+  datasetBounds: MapBounds
 ) => ({
   type: "FeatureCollection",
 
@@ -65,22 +74,18 @@ const createDatasetGeoJSON = (
               datasetBounds.min_x,
               datasetBounds.min_y,
             ],
-
             [
               datasetBounds.max_x,
               datasetBounds.min_y,
             ],
-
             [
               datasetBounds.max_x,
               datasetBounds.max_y,
             ],
-
             [
               datasetBounds.min_x,
               datasetBounds.max_y,
             ],
-
             [
               datasetBounds.min_x,
               datasetBounds.min_y,
@@ -93,17 +98,17 @@ const createDatasetGeoJSON = (
 });
 
 const MapView = ({
-  spatial,
+  dataset,
   demoMode = false,
 }: MapViewProps) => {
   const mapContainerRef =
     useRef<HTMLDivElement>(null);
 
-  const mapRef = useRef<maplibregl.Map | null>(
-    null
-  );
+  const mapRef =
+    useRef<maplibregl.Map | null>(null);
 
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] =
+    useState(false);
 
   const [layers, setLayers] =
     useState<LayerVisibility>({
@@ -114,19 +119,77 @@ const MapView = ({
       roads: true,
     });
 
-  const bounds = spatial?.bounds;
+  /*
+   * ============================================================
+   * DATASET → OBSERVATION → SPATIAL
+   * ============================================================
+   *
+   * Phase 1 currently displays the first observation.
+   */
+  const observation = dataset.observations[0];
 
+  const spatial = observation?.spatial;
+
+  /*
+   * ============================================================
+   * BACKEND BOUNDS → MAP BOUNDS
+   * ============================================================
+   *
+   * Backend:
+   *
+   * west
+   * south
+   * east
+   * north
+   *
+   * Existing MapLibre logic:
+   *
+   * min_x
+   * min_y
+   * max_x
+   * max_y
+   *
+   * useMemo is important here.
+   *
+   * Without it, a new object would be created on every
+   * React render, causing the MapLibre useEffect to run
+   * repeatedly and recreate the map.
+   */
+  const bounds = useMemo<MapBounds | null>(() => {
+    if (!spatial?.wgs84_bounds) {
+      return null;
+    }
+
+    return {
+      min_x: spatial.wgs84_bounds.west,
+      min_y: spatial.wgs84_bounds.south,
+      max_x: spatial.wgs84_bounds.east,
+      max_y: spatial.wgs84_bounds.north,
+    };
+  }, [
+    spatial?.wgs84_bounds?.west,
+    spatial?.wgs84_bounds?.south,
+    spatial?.wgs84_bounds?.east,
+    spatial?.wgs84_bounds?.north,
+  ]);
+
+  /*
+   * ============================================================
+   * FIT DATASET
+   * ============================================================
+   */
   const fitDataset = () => {
     const map = mapRef.current;
 
-    if (!map || !isValidBounds(bounds)) return;
+    if (!map || !isValidBounds(bounds)) {
+      return;
+    }
 
     map.fitBounds(
       [
         [bounds.min_x, bounds.min_y],
         [bounds.max_x, bounds.max_y],
       ],
-
       {
         padding: 55,
         duration: 900,
@@ -134,13 +197,20 @@ const MapView = ({
     );
   };
 
+  /*
+   * ============================================================
+   * MAP LAYER VISIBILITY
+   * ============================================================
+   */
   const setMapLayerVisibility = (
     layerIds: string[],
     visible: boolean
   ) => {
     const map = mapRef.current;
 
-    if (!map || !mapLoaded) return;
+    if (!map || !mapLoaded) {
+      return;
+    }
 
     layerIds.forEach((layerId) => {
       if (map.getLayer(layerId)) {
@@ -187,9 +257,15 @@ const MapView = ({
     );
   };
 
+  /*
+   * ============================================================
+   * CREATE MAP
+   * ============================================================
+   */
   useEffect(() => {
     if (
       !mapContainerRef.current ||
+      !spatial?.map_ready ||
       !isValidBounds(bounds)
     ) {
       return;
@@ -251,32 +327,41 @@ const MapView = ({
     mapRef.current = map;
 
     /*
-     * Zoom, compass and map rotation controls
+     * ==========================================================
+     * NAVIGATION CONTROLS
+     * ==========================================================
      */
     map.addControl(
       new maplibregl.NavigationControl({
         showCompass: true,
         showZoom: true,
       }),
-
       "top-right"
     );
 
     /*
-     * Map scale
+     * ==========================================================
+     * SCALE CONTROL
+     * ==========================================================
      */
     map.addControl(
       new maplibregl.ScaleControl({
         maxWidth: 120,
         unit: "metric",
       }),
-
       "bottom-left"
     );
 
+    /*
+     * ==========================================================
+     * MAP LOAD
+     * ==========================================================
+     */
     map.on("load", () => {
       /*
+       * --------------------------------------------------------
        * Dataset geographic extent
+       * --------------------------------------------------------
        */
       const datasetGeoJSON =
         createDatasetGeoJSON(bounds);
@@ -320,7 +405,9 @@ const MapView = ({
       });
 
       /*
+       * --------------------------------------------------------
        * Demo change-detection layer
+       * --------------------------------------------------------
        */
       map.addSource("change-source", {
         type: "geojson",
@@ -346,7 +433,9 @@ const MapView = ({
       });
 
       /*
+       * --------------------------------------------------------
        * Demo flood layer
+       * --------------------------------------------------------
        */
       map.addSource("flood-source", {
         type: "geojson",
@@ -372,7 +461,9 @@ const MapView = ({
       });
 
       /*
+       * --------------------------------------------------------
        * Demo buildings layer
+       * --------------------------------------------------------
        */
       map.addSource("building-source", {
         type: "geojson",
@@ -399,7 +490,9 @@ const MapView = ({
       });
 
       /*
+       * --------------------------------------------------------
        * Demo road layer
+       * --------------------------------------------------------
        */
       map.addSource("road-source", {
         type: "geojson",
@@ -426,14 +519,15 @@ const MapView = ({
       setMapLoaded(true);
 
       /*
-       * Automatic dataset location focus
+       * --------------------------------------------------------
+       * Automatically focus on dataset
+       * --------------------------------------------------------
        */
       map.fitBounds(
         [
           [bounds.min_x, bounds.min_y],
           [bounds.max_x, bounds.max_y],
         ],
-
         {
           padding: 55,
           duration: 0,
@@ -441,6 +535,11 @@ const MapView = ({
       );
     });
 
+    /*
+     * ==========================================================
+     * CLEANUP
+     * ==========================================================
+     */
     return () => {
       setMapLoaded(false);
 
@@ -448,24 +547,34 @@ const MapView = ({
 
       mapRef.current = null;
     };
-  }, [bounds]);
+  }, [bounds, spatial?.map_ready]);
 
   /*
-   * Spatial information missing fallback
+   * ============================================================
+   * MAP UNAVAILABLE
+   * ============================================================
    */
-  if (!isValidBounds(bounds)) {
+  if (
+    !spatial?.map_ready ||
+    !isValidBounds(bounds)
+  ) {
     return (
       <section className="map-fallback">
         <strong>Map unavailable</strong>
 
         <p>
-          Geographic location is unavailable for this
-          dataset.
+          {spatial?.map_unavailable_reason ||
+            "Geographic location is unavailable for this dataset."}
         </p>
       </section>
     );
   }
 
+  /*
+   * ============================================================
+   * MAP UI
+   * ============================================================
+   */
   return (
     <section className="map-card">
       <div className="map-card-header">
@@ -590,7 +699,9 @@ const MapView = ({
           <span>CRS</span>
 
           <strong>
-            {spatial?.crs || "Unavailable"}
+            {spatial?.source_crs ||
+              spatial?.crs_status ||
+              "Unavailable"}
           </strong>
         </div>
 

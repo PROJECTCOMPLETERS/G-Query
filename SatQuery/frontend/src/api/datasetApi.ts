@@ -1,44 +1,99 @@
-import { apiRequest } from "./client";
+import apiClient from "./client";
 
 import type {
+  CreateDatasetResponse,
   Dataset,
-  QueryResponse,
-  UploadResponse,
+  DatasetListResponse,
+  DatasetType,
+  UploadDatasetFileResponse,
 } from "../types/dataset";
 
-export const uploadSatelliteFile = async (
-  file: File
-): Promise<UploadResponse> => {
-  const formData = new FormData();
+export const createDataset = async (
+  name: string,
+  datasetType: DatasetType
+): Promise<CreateDatasetResponse> => {
+  const response = await apiClient.post<CreateDatasetResponse>(
+    "/api/v1/datasets",
+    {
+      name,
+      dataset_type: datasetType,
+    }
+  );
 
-  formData.append("file", file);
+  return response.data;
+};
 
-  return apiRequest<UploadResponse>("/api/upload", {
-    method: "POST",
-    body: formData,
-  });
+export const getDatasets = async (
+  page = 1,
+  pageSize = 20
+): Promise<DatasetListResponse> => {
+  const response = await apiClient.get<DatasetListResponse>(
+    "/api/v1/datasets",
+    {
+      params: {
+        page,
+        page_size: pageSize,
+      },
+    }
+  );
+
+  return response.data;
 };
 
 export const getDataset = async (
   datasetId: string
 ): Promise<Dataset> => {
-  return apiRequest<Dataset>(
-    `/api/datasets/${datasetId}`
+  const response = await apiClient.get<Dataset>(
+    `/api/v1/datasets/${datasetId}`
+  );
+
+  return response.data;
+};
+
+export const deleteDataset = async (
+  datasetId: string
+): Promise<void> => {
+  await apiClient.delete(
+    `/api/v1/datasets/${datasetId}`
   );
 };
 
-export const submitQuery = async (
-  query: string,
-  datasetId?: string
-): Promise<QueryResponse> => {
-  return apiRequest<QueryResponse>("/api/query", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      query,
-      dataset_id: datasetId || null,
-    }),
-  });
+export const uploadDatasetFile = async (
+  datasetId: string,
+  file: File
+): Promise<UploadDatasetFileResponse> => {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response =
+    await apiClient.post<UploadDatasetFileResponse>(
+      `/api/v1/datasets/${datasetId}/files`,
+      formData
+    );
+
+  return response.data;
+};
+
+export const getDatasetFile = async (
+  datasetId: string,
+  fileId: string
+): Promise<Blob> => {
+  const response = await apiClient.get<Blob>(
+    `/api/v1/datasets/${datasetId}/files/${fileId}`,
+    {
+      responseType: "blob",
+    }
+  );
+
+  return response.data;
+};
+
+export const deleteDatasetFile = async (
+  datasetId: string,
+  fileId: string
+): Promise<void> => {
+  await apiClient.delete(
+    `/api/v1/datasets/${datasetId}/files/${fileId}`
+  );
 };
