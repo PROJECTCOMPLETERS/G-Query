@@ -1,93 +1,68 @@
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 
-from app.schemas.dataset import Dataset, DatasetCreate
+from app.api.dependencies import get_dataset_service
+from app.schemas.common.dataset import DatasetCreate
+from app.schemas.dataset import DatasetListResponse, DatasetResponse
 from app.services.dataset_service import DatasetService
+from app.schemas.common.error import ErrorResponse
 
-
-router = APIRouter(
-    prefix="/api/v1/datasets",
-    tags=["Datasets"],
-)
-
-
-def get_service() -> DatasetService:
-    return DatasetService()
+router = APIRouter()
 
 
 @router.post(
-    "",
-    response_model=Dataset,
+    "/datasets",
+    response_model=DatasetResponse,
     status_code=status.HTTP_201_CREATED,
 )
-async def create_dataset(payload: DatasetCreate):
-    service = get_service()
-
-    return service.create_dataset(payload)
-
-
-@router.get("")
-async def list_datasets(
-    page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+def create_dataset(
+    dataset: DatasetCreate,
+    dataset_service: DatasetService = Depends(get_dataset_service),
 ):
-    service = get_service()
+    return dataset_service.create_dataset(dataset)
 
-    items, total = service.list_datasets(
+
+@router.get(
+    "/datasets",
+    response_model=DatasetListResponse,
+)
+def list_datasets(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1),
+    dataset_service: DatasetService = Depends(get_dataset_service),
+):
+    return dataset_service.list_datasets(
         page=page,
         page_size=page_size,
     )
 
-    return {
-        "items": items,
-        "page": page,
-        "page_size": page_size,
-        "total": total,
-    }
-
 
 @router.get(
-    "/{dataset_id}",
-    response_model=Dataset,
+    "/datasets/{dataset_id}",
+    response_model=DatasetResponse,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+    },
 )
-async def get_dataset(dataset_id: str):
-    service = get_service()
-
-    dataset = service.get_dataset(dataset_id)
-
-    if dataset is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "error": {
-                    "code": "DATASET_NOT_FOUND",
-                    "message": "Dataset not found",
-                    "details": None,
-                }
-            },
-        )
-
-    return dataset
+def get_dataset(
+    dataset_id: str,
+    dataset_service: DatasetService = Depends(get_dataset_service),
+):
+    return dataset_service.get_dataset(dataset_id)
 
 
 @router.delete(
-    "/{dataset_id}",
+    "/datasets/{dataset_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    responses={
+        400: {"model": ErrorResponse},
+        404: {"model": ErrorResponse},
+    },
 )
-async def delete_dataset(dataset_id: str):
-    service = get_service()
+def delete_dataset(
+    dataset_id: str,
+    dataset_service: DatasetService = Depends(get_dataset_service),
+):
+    dataset_service.delete_dataset(dataset_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-    deleted = service.delete_dataset(dataset_id)
-
-    if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "error": {
-                    "code": "DATASET_NOT_FOUND",
-                    "message": "Dataset not found",
-                    "details": None,
-                }
-            },
-        )
-
-    return None
