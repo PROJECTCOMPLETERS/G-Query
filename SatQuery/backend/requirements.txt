@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+pymongo
+python-multipart
+pytest
+httpx
+Pillow
