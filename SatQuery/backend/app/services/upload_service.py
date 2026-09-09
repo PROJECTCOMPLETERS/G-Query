@@ -1,109 +1,107 @@
+
+import os
+import tempfile
 from pathlib import Path
-from uuid import uuid4
+from typing import BinaryIO
 
-from fastapi import UploadFile
+from data_engine import (
+    detect_file_type,
+    validate_file,
+    extract_metadata,
+)
+from data_engine.exceptions import DataEngineError
 
-import app.database.connection as db
-from app.core.config import settings
 from app.core.exceptions import SatQueryException
-from app.services.gridfs_service import GridFSService
+from app.services.dataset_service import DatasetService
+from app.services.metadata_mapper import metadata_to_observation
+from app.storage.interfaces.file_storage import FileStorage
 
 
-ALLOWED_EXTENSIONS = {
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".tif",
-    ".tiff",
-}
+class UploadService:
+    def __init__(
+        self,
+        file_storage: FileStorage,
+        dataset_service: DatasetService,
+    ):
+        self.file_storage = file_storage
+        self.dataset_service = dataset_service
 
-CHUNK_SIZE = 1024 * 1024  # 1 MB
+    def save_file(
+        self,
+        dataset_id: str,
+        file: BinaryIO,
+        filename: str,
+        content_type: str | None = None,
+    ) -> str:
+        # Make sure the dataset exists before processing the file.
+        self.dataset_service.get_dataset(dataset_id)
 
+        extension = Path(filename).suffix.lower()
 
-def generate_dataset_id() -> str:
-    """Generate a unique SatQuery dataset ID."""
-    return f"sat_{uuid4().hex[:8]}"
+        # API-level supported file check.
+        if extension not in {".jpg", ".jpeg", ".png", ".tif", ".tiff"}:
+            raise SatQueryException(
+                code="UNSUPPORTED_FILE_TYPE",
+                message="Unsupported file type.",
+            )
 
+        # Copy the uploaded file to a temporary file.
+        # The Data Engine works with file paths.
+        with tempfile.NamedTemporaryFile(
+            suffix=extension,
+            delete=False,
+        ) as temp_file:
+            temp_path = Path(temp_file.name)
 
-async def save_uploaded_file(file: UploadFile) -> tuple[str, str, int]:
-    """
-    Validate and stream an uploaded file directly into GridFS.
+            file.seek(0)
 
-    Returns:
-        dataset_id, gridfs_file_id, total_size
-    """
+            while chunk := file.read(1024 * 1024):
+                temp_file.write(chunk)
 
-    if not file.filename:
-        raise SatQueryException(
-            message="Filename is required.",
-            code="MISSING_FILENAME",
-            status_code=400,
-        )
-
-    extension = Path(file.filename).suffix.lower()
-
-    if extension not in ALLOWED_EXTENSIONS:
-        raise SatQueryException(
-            message=(
-                "Unsupported file format. "
-                "Allowed formats: JPG, PNG and GeoTIFF."
-            ),
-            code="UNSUPPORTED_FORMAT",
-            status_code=415,
-        )
-
-    if db.database is None:
-        raise RuntimeError("MongoDB is not connected.")
-
-    max_size = settings.max_upload_size_mb * 1024 * 1024
-
-    dataset_id = generate_dataset_id()
-
-    gridfs_service = GridFSService(db.database)
-
-    upload_stream = gridfs_service.create_upload_stream(
-        filename=file.filename,
-        content_type=file.content_type,
-    )
-
-    total_size = 0
-
-    try:
-        while True:
-            chunk = await file.read(CHUNK_SIZE)
-
-            if not chunk:
-                break
-
-            total_size += len(chunk)
-
-            if total_size > max_size:
-                upload_stream.abort()
-
-                raise SatQueryException(
-                    message=(
-                        f"File size exceeds the "
-                        f"{settings.max_upload_size_mb} MB limit."
-                    ),
-                    code="FILE_TOO_LARGE",
-                    status_code=413,
-                )
-
-            upload_stream.write(chunk)
-
-        upload_stream.close()
-
-    except SatQueryException:
-        raise
-
-    except Exception as exc:
         try:
-            upload_stream.abort()
-        except Exception:
-            pass
+            # Data Engine validation and metadata extraction.
+            detect_file_type(temp_path)
+            validate_file(temp_path)
+            metadata = extract_metadata(temp_path)
 
-        raise RuntimeError(
-            f"Failed to store file in GridFS: {exc}"
-        ) from exc
+            size_bytes = temp_path.stat().st_size
 
-    return dataset_id, str(upload_stream._id), total_size
+        except DataEngineError as exc:
+            raise SatQueryException(
+                code="INVALID_RASTER",
+                message="The uploaded file is not a valid supported raster.",
+                details=str(exc),
+            ) from exc
+
+        finally:
+            # The temporary file is no longer needed.
+            if temp_path.exists():
+                os.remove(temp_path)
+
+        # Reset the uploaded file before storing it in GridFS.
+        file.seek(0)
+
+        # Store the actual file through the Storage Abstraction.
+        file_id = self.file_storage.save(
+            file=file,
+            filename=filename,
+            content_type=content_type,
+        )
+
+        # Convert Data Engine metadata into the common Observation schema.
+        observation = metadata_to_observation(
+            metadata=metadata,
+            file_id=file_id,
+            filename=filename,
+            media_type=content_type,
+            size_bytes=size_bytes,
+        )
+
+        # Store the observation reference inside the dataset.
+        self.dataset_service.add_observation(
+            dataset_id=dataset_id,
+            observation=observation,
+        )
+
+        return file_id
+

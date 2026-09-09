@@ -1,56 +1,53 @@
-import logging
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from app.core.exceptions import SatQueryException
 
 from app.api.router import api_router
 from app.core.config import settings
-from app.core.exceptions import (
-    SatQueryException,
-    satquery_exception_handler,
-)
-from app.core.logging import setup_logging
-from app.database.connection import connect_to_mongodb
 
-
-setup_logging()
-
-logger = logging.getLogger("satquery")
 
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
-    description="Satellite Query and Analysis API",
 )
+@app.exception_handler(SatQueryException)
+async def satquery_exception_handler(
+    request: Request,
+    exc: SatQueryException,
+):
+    status_code = 404
 
-app.add_exception_handler(
-    SatQueryException,
-    satquery_exception_handler,
+    if exc.code == "INVALID_DATASET_ID":
+        status_code = 400
+
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+                "details": exc.details,
+            }
+        },
+    )
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    request: Request,
+    exc: RequestValidationError,
+):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request validation failed.",
+                "details": exc.errors(),
+            }
+        },
+    )
+app.include_router(
+    api_router,
+    prefix=settings.api_prefix,
 )
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.allowed_origins.split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-app.include_router(api_router)
-
-
-@app.on_event("startup")
-def startup():
-    connect_to_mongodb()
-
-
-@app.get("/api/health")
-def health_check():
-    logger.info("Health check requested")
-
-    return {
-        "success": True,
-        "service": settings.app_name,
-        "version": settings.app_version,
-        "status": "healthy",
-    }

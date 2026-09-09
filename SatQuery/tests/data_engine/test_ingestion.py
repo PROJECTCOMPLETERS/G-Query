@@ -6,7 +6,7 @@ from rasterio.transform import from_origin
 from PIL import Image
 import pytest
 
-from data_engine.controller import process_file
+from data_engine import process_file
 from data_engine.exceptions import DataEngineError
 from data_engine.ingestion import (
     detect_file_type,
@@ -547,3 +547,75 @@ def test_validate_resolution_missing():
 
     assert result["valid"] is False
     assert result["resolution"] is None
+
+# -------------------------------------------------------------------
+# Data Engine public interface / contract tests
+# -------------------------------------------------------------------
+
+
+def test_data_engine_public_entry_point():
+    """process_file should be available from the public package interface."""
+
+    from data_engine import process_file as public_process_file
+
+    assert callable(public_process_file)
+
+
+def test_data_engine_result_contract(tmp_path: Path):
+    """process_file should return the standardized Data Engine structure."""
+
+    path = tmp_path / "contract.tif"
+
+    transform = from_origin(
+        80.0,
+        13.1,
+        10.0,
+        10.0,
+    )
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=20,
+        height=20,
+        count=3,
+        dtype="uint16",
+        crs="EPSG:32644",
+        transform=transform,
+    ) as dst:
+        dst.write(
+            np.zeros((3, 20, 20), dtype=np.uint16)
+        )
+
+        dst.set_band_description(1, "B02")
+        dst.set_band_description(2, "B03")
+        dst.set_band_description(3, "B04")
+
+    result = process_file(path)
+
+    # Required top-level Data Engine sections.
+    assert set(
+        [
+            "valid",
+            "raster",
+            "band_validation",
+            "spatial",
+            "acquisition",
+        ]
+    ).issubset(result.keys())
+
+    # Required raster information.
+    assert result["raster"]["width"] == 20
+    assert result["raster"]["height"] == 20
+    assert result["raster"]["bands"] == 3
+    assert result["raster"]["crs"] == "EPSG:32644"
+
+    # Required spatial information.
+    assert "bounds" in result["spatial"]
+    assert "centroid" in result["spatial"]
+    assert "map_ready" in result["spatial"]
+
+    # Acquisition metadata must not be invented.
+    assert "datetime" in result["acquisition"]
+    assert result["acquisition"]["datetime"] is None

@@ -1,4 +1,9 @@
 fastapi
-uvicorn[standard]
+uvicorn
+pydantic
 pydantic-settings
+pymongo
 python-multipart
+pytest
+httpx
+Pillow

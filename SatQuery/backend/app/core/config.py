@@ -2,14 +2,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    app_name: str = "SatQuery API"
-    app_version: str = "0.1.0"
-    debug: bool = True
-    allowed_origins: str = "*"
-    max_upload_size_mb: int = 500
+    app_name: str = "SatQuery AI"
+    app_version: str = "1.0.0"
+    api_prefix: str = "/api/v1"
 
-    mongodb_uri: str
-    mongodb_db_name: str = "satquery"
+    mongodb_uri: str = "mongodb://localhost:27017"
+    mongodb_database: str = "satquery"
 
     model_config = SettingsConfigDict(
         env_file=".env",
