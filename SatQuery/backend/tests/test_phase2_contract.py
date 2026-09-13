@@ -23,6 +23,7 @@ from app.core.exceptions import (
 )
 from app.services.query_service import QueryService
 
+
 def test_structured_query():
     query = StructuredQuery(
         request_id="req_001",
