@@ -1,13 +1,14 @@
 
+from pathlib import Path
+
 from bson import ObjectId
 from fastapi.testclient import TestClient
-
 from app.main import app
 from app.storage.mongodb import database
 
 
 client = TestClient(app)
-
+SAMPLE_TIF = Path(__file__).parent / "sample.tif"
 
 def test_create_dataset():
     response = client.post(
@@ -135,7 +136,7 @@ def test_upload_file():
 
     dataset_id = create_response.json()["dataset_id"]
 
-    with open("tests/sample.tif", "rb") as file:
+    with SAMPLE_TIF.open("rb") as file:
         upload_response = client.post(
             f"/api/v1/datasets/{dataset_id}/files",
             files={
@@ -169,7 +170,7 @@ def test_get_file():
 
     dataset_id = create_response.json()["dataset_id"]
 
-    with open("tests/sample.tif", "rb") as file:
+    with SAMPLE_TIF.open("rb") as file:
         upload_response = client.post(
             f"/api/v1/datasets/{dataset_id}/files",
             files={
@@ -210,7 +211,7 @@ def test_delete_file():
 
     dataset_id = create_response.json()["dataset_id"]
 
-    with open("tests/sample.tif", "rb") as file:
+    with SAMPLE_TIF.open("rb") as file:
         upload_response = client.post(
             f"/api/v1/datasets/{dataset_id}/files",
             files={
@@ -363,7 +364,7 @@ def test_delete_dataset_removes_gridfs_files():
 
     dataset_id = create_response.json()["dataset_id"]
 
-    with open("tests/sample.tif", "rb") as file:
+    with SAMPLE_TIF.open("rb") as file:
         upload_response = client.post(
             f"/api/v1/datasets/{dataset_id}/files",
             files={
