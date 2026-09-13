@@ -9,6 +9,7 @@ class RasterInfo(BaseModel):
     bands: int
     band_details: list[dict[str, Any]] = Field(default_factory=list)
     resolution: list[float] = Field(default_factory=list)
+    transform: dict[str, float] | None = None
     crs: str | None = None
     modality: str | None = None
 

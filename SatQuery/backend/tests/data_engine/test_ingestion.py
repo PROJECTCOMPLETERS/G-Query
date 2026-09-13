@@ -127,7 +127,7 @@ def test_controller_valid_optical_geotiff(tmp_path: Path):
     assert result["raster"]["height"] == 100
     assert result["raster"]["bands"] == 3
     assert result["raster"]["crs"] == "EPSG:32644"
-    assert result["raster"]["modality"] is None
+    assert result["raster"]["modality"] == "optical"
 
     assert result["band_validation"]["valid"] is True
     assert result["band_validation"]["same_dtype"] is True
@@ -611,6 +611,17 @@ def test_data_engine_result_contract(tmp_path: Path):
     assert result["raster"]["bands"] == 3
     assert result["raster"]["crs"] == "EPSG:32644"
 
+    # Affine transform must be exposed through the public Data Engine result.
+    assert result["raster"]["transform"] is not None
+    assert set(result["raster"]["transform"]) == {
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+    }
+
     # Required spatial information.
     assert "bounds" in result["spatial"]
     assert "centroid" in result["spatial"]
@@ -618,4 +629,55 @@ def test_data_engine_result_contract(tmp_path: Path):
 
     # Acquisition metadata must not be invented.
     assert "datetime" in result["acquisition"]
+    assert result["acquisition"]["datetime"] is None
+
+
+def test_extract_acquisition_datetime_from_metadata(tmp_path: Path):
+    """An explicit acquisition datetime in GeoTIFF metadata should be extracted."""
+
+    path = tmp_path / "dated.tif"
+    transform = from_origin(80.0, 13.1, 10.0, 10.0)
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=20,
+        height=20,
+        count=1,
+        dtype="uint16",
+        crs="EPSG:32644",
+        transform=transform,
+    ) as dst:
+        dst.write(np.zeros((1, 20, 20), dtype=np.uint16))
+        dst.set_band_description(1, "B02")
+        dst.update_tags(ACQUISITION_DATETIME="2025-01-04T05:30:00Z")
+
+    result = process_file(path)
+
+    assert result["acquisition"]["datetime"] == "2025-01-04T05:30:00+00:00"
+
+
+def test_missing_acquisition_datetime_remains_none(tmp_path: Path):
+    """Missing acquisition metadata should remain explicitly unavailable."""
+
+    path = tmp_path / "undated.tif"
+    transform = from_origin(80.0, 13.1, 10.0, 10.0)
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=20,
+        height=20,
+        count=1,
+        dtype="uint16",
+        crs="EPSG:32644",
+        transform=transform,
+    ) as dst:
+        dst.write(np.zeros((1, 20, 20), dtype=np.uint16))
+        dst.set_band_description(1, "B02")
+
+    result = process_file(path)
+
     assert result["acquisition"]["datetime"] is None

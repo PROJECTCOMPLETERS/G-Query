@@ -9,6 +9,22 @@ from data_engine.ingestion.metadata_extractor import extract_metadata
 
 SAR_POLARIZATIONS = {"VV", "VH", "HH", "HV"}
 
+OPTICAL_BAND_NAMES = {
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+}
+
 
 def _extract_sar_polarization(name: str) -> str | None:
     """
@@ -36,20 +52,31 @@ def _extract_sar_polarization(name: str) -> str | None:
 
     return None
 
+def _detect_optical_band_evidence(
+    metadata: dict[str, Any],
+) -> list[str]:
+    """Return recognized optical band names found in raster metadata."""
+
+    detected = []
+
+    for band in metadata.get("bands", []):
+        name = str(band.get("name", "")).strip().upper()
+
+        if name in OPTICAL_BAND_NAMES and name not in detected:
+            detected.append(name)
+
+    return detected
 
 def _detect_modality(
     metadata: dict[str, Any],
 ) -> tuple[str | None, list[str]]:
-    """
-    Detect raster modality from available band metadata.
+    """Detect raster modality from available band metadata.
 
-    SAR is identified only when at least one recognized SAR
-    polarization is present.
-
-    Returns:
-        A tuple containing:
-        - modality: "sar" or None
-        - detected SAR polarizations
+    The Phase 2 data model treats multispectral imagery as a distinct
+    modality. Recognized Sentinel-style optical bands are classified as
+    ``multispectral`` when four or more spectral bands are present; a
+    smaller recognized optical set is classified as ``optical``. SAR is
+    identified from polarization metadata first.
     """
     polarizations = []
 
@@ -63,6 +90,14 @@ def _detect_modality(
 
     if polarizations:
         return "sar", polarizations
+
+    optical_bands = _detect_optical_band_evidence(metadata)
+
+    if optical_bands:
+        if len(optical_bands) >= 4:
+            return "multispectral", optical_bands
+
+        return "optical", optical_bands
 
     return None, []
 
@@ -256,6 +291,7 @@ def process_file(path: str | Path) -> dict[str, Any]:
         "bands": metadata["band_count"],
         "band_details": metadata.get("bands", []),
         "resolution": metadata["resolution"],
+        "transform": metadata.get("transform"),
         "crs": (
             geographic["source_crs"]
             if geographic["source_crs"] is not None
@@ -263,7 +299,6 @@ def process_file(path: str | Path) -> dict[str, Any]:
         ),
         "modality": modality,
     }
-
     # 6. Build standardized spatial information.
     spatial = {
         "bounds": geographic["wgs84_bounds"],
@@ -281,7 +316,7 @@ def process_file(path: str | Path) -> dict[str, Any]:
         "band_validation": band_validation,
         "spatial": spatial,
         "acquisition": {
-            # Do not invent acquisition metadata.
-            "datetime": None,
+            # Use only acquisition metadata explicitly extracted from the file.
+            "datetime": metadata.get("acquisition", {}).get("datetime"),
         },
     }
