@@ -1,6 +1,6 @@
-
 from fastapi import Depends
 
+from app.services.data_engine_client import RealDataEngineClient
 from app.services.dataset_service import DatasetService
 from app.services.file_service import FileService
 from app.services.upload_service import UploadService
@@ -46,4 +46,12 @@ def get_file_service(
     return FileService(
         storage=file_storage,
         dataset_service=dataset_service,
+    )
+
+
+def get_data_engine_client() -> RealDataEngineClient:
+    file_storage = GridFSFileStorage()
+
+    return RealDataEngineClient(
+        file_storage=file_storage
     )

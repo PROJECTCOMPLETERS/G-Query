@@ -7,6 +7,7 @@ from app.schemas.contract import ContractBase
 
 class ObservationInput(BaseModel):
     input_id: str
+    file_id: str | None = None
     type: str = "image"
 
 

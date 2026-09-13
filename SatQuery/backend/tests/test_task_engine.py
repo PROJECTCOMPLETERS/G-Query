@@ -1,6 +1,6 @@
 from app.schemas.query import StructuredQuery
 
-
+from app.schemas.data_engine import DataReadiness
 from app.services.task_engine import (
     InvalidTaskError,
     TaskEngine,
@@ -247,3 +247,26 @@ def test_change_detection_missing_spatial_information():
     assert "Spatial information is required." in (
         clarification.missing_information
     )
+def test_execution_plan_preserves_query_modality():
+    engine = TaskEngine()
+
+    query = StructuredQuery(
+        request_id="req_411",
+        question="How many buildings are in this image?",
+        intent="object_counting",
+        entities=["building"],
+        inputs=[
+            {"input_id": "obs_001", "type": "image"}
+        ],
+        modality="optical",
+    )
+
+    readiness = DataReadiness(
+        request_id="req_411",
+        ready=True,
+        available_observations=["obs_001"],
+    )
+
+    plan = engine.build_execution_plan(query, readiness)
+
+    assert plan.required_modalities == ["optical"]

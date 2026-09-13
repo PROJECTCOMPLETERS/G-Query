@@ -1,16 +1,19 @@
 from fastapi import APIRouter, Depends, status
 
+from app.api.dependencies import get_data_engine_client
 from app.core.request import generate_request_id
 from app.schemas.query import QueryAcceptedResponse, QueryRequest
 from app.services.orchestrator import Orchestrator
 
 router = APIRouter(prefix="/query", tags=["query"])
 
-orchestrator = Orchestrator()
-
 
 def get_orchestrator() -> Orchestrator:
-    return orchestrator
+    data_engine = get_data_engine_client()
+
+    return Orchestrator(
+        data_engine=data_engine,
+    )
 
 
 @router.post(

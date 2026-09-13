@@ -17,13 +17,16 @@ from app.services.task_engine import TaskEngine
 
 class DataEngineClient(Protocol):
     """
-    Interface only.
+    Interface between the orchestrator and the Data Engine.
 
-    Rubin's Data Engine will provide the actual implementation later.
+    The concrete implementation is responsible for connecting
+    to Rubin's Data Engine.
     """
 
     def check_readiness(
         self,
+        request_id: str,
+        task: str,
         requirements: DataRequirements,
         observations: list[ObservationInput],
     ) -> DataReadiness:
@@ -142,14 +145,30 @@ class Orchestrator:
     def continue_with_data_readiness(
         self,
         request_id: str,
-        readiness: DataReadiness,
     ) -> OrchestrationResult:
         context = self.get_context(request_id)
 
-        if context.data_requirements is None or context.query is None:
+        if (
+            context.data_requirements is None
+            or context.query is None
+        ):
             raise ValueError(
                 "Execution context is incomplete."
             )
+
+        if self.data_engine is None:
+            raise ValueError(
+                "Data Engine client is not configured."
+            )
+
+        
+
+        readiness = self.data_engine.check_readiness(
+            request_id=request_id,
+            task=context.data_requirements.task,
+            requirements=context.data_requirements,
+            observations=context.query.inputs,
+        )
 
         context.set_data_readiness(readiness)
 
