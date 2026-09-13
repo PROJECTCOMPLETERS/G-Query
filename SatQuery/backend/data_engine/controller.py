@@ -256,6 +256,7 @@ def process_file(path: str | Path) -> dict[str, Any]:
         "bands": metadata["band_count"],
         "band_details": metadata.get("bands", []),
         "resolution": metadata["resolution"],
+        "transform": metadata.get("transform"),
         "crs": (
             geographic["source_crs"]
             if geographic["source_crs"] is not None
@@ -263,7 +264,6 @@ def process_file(path: str | Path) -> dict[str, Any]:
         ),
         "modality": modality,
     }
-
     # 6. Build standardized spatial information.
     spatial = {
         "bounds": geographic["wgs84_bounds"],

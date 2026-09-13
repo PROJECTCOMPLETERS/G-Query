@@ -611,6 +611,17 @@ def test_data_engine_result_contract(tmp_path: Path):
     assert result["raster"]["bands"] == 3
     assert result["raster"]["crs"] == "EPSG:32644"
 
+    # Affine transform must be exposed through the public Data Engine result.
+    assert result["raster"]["transform"] is not None
+    assert set(result["raster"]["transform"]) == {
+        "a",
+        "b",
+        "c",
+        "d",
+        "e",
+        "f",
+    }
+
     # Required spatial information.
     assert "bounds" in result["spatial"]
     assert "centroid" in result["spatial"]
