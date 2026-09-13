@@ -62,5 +62,5 @@ class Phase2Error(BaseModel):
 
 
 class Phase2ErrorResponse(BaseModel):
-    status: Literal["error"] = "error"
+    status: Literal["failed"] = "failed"
     error: Phase2Error

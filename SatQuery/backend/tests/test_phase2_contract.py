@@ -144,7 +144,7 @@ def test_phase2_error_response():
         )
     )
 
-    assert error.status == "error"
+    assert error.status == "failed"
     assert error.error.code == "DATA_INCOMPATIBLE"
     assert error.error.stage == "data_validation"
     assert error.error.recoverable is False
