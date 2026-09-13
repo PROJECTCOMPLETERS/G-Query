@@ -39,12 +39,13 @@ ALLOWED_TRANSITIONS: dict[RequestStatus, set[RequestStatus]] = {
         RequestStatus.UNSUPPORTED,
         RequestStatus.FAILED,
     },
-    RequestStatus.REQUIREMENTS_CHECKED: {
-        RequestStatus.WAITING_FOR_DATA,
-        RequestStatus.READY,
-        RequestStatus.NEEDS_CLARIFICATION,
-        RequestStatus.FAILED,
-    },
+   RequestStatus.REQUIREMENTS_CHECKED: {
+    RequestStatus.WAITING_FOR_DATA,
+    RequestStatus.READY,
+    RequestStatus.NOT_READY,
+    RequestStatus.NEEDS_CLARIFICATION,
+    RequestStatus.FAILED,
+},
     RequestStatus.WAITING_FOR_DATA: {
         RequestStatus.READY,
         RequestStatus.NOT_READY,
