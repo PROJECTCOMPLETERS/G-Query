@@ -1,7 +1,5 @@
 """Generic raster resampling utilities for the SatQuery Data Engine."""
 
-from __future__ import annotations
-
 from pathlib import Path
 from typing import Any
 
@@ -83,6 +81,8 @@ def resample_raster(
 
         profile = source.profile.copy()
 
+        # Avoid invalid block-size settings when writing
+        # a non-tiled output raster.
         profile.update(
             {
                 "width": output_width,
@@ -92,8 +92,6 @@ def resample_raster(
             }
         )
 
-        # Block sizes from a tiled source are not valid when the
-        # output is explicitly configured as non-tiled.
         profile.pop("blockxsize", None)
         profile.pop("blockysize", None)
 
