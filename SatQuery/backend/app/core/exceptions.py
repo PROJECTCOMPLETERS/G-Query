@@ -1,8 +1,4 @@
 from enum import Enum
-from app.schemas.common.error import (
-    Phase2Error,
-    Phase2ErrorResponse,
-)
 
 
 class RecoveryAction(str, Enum):
@@ -74,14 +70,3 @@ class SatQueryException(Exception):
             return RecoveryAction.ABORT
 
         return RecoveryAction.ABORT
-def to_phase2_error_response(
-    error: SatQueryException,
-) -> Phase2ErrorResponse:
-    return Phase2ErrorResponse(
-        error=Phase2Error(
-            code=error.code,
-            message=error.message,
-            stage="orchestration",
-            recoverable=error.is_retryable,
-        )
-    )
