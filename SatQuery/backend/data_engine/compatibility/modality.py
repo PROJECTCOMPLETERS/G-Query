@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 
-SUPPORTED_MODALITIES = {"optical", "sar"}
+SUPPORTED_MODALITIES = {"optical", "sar", "multispectral"}
 
 
 def _extract_raster(observation: dict[str, Any]) -> dict[str, Any]:

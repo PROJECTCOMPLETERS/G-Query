@@ -70,16 +70,13 @@ def _detect_optical_band_evidence(
 def _detect_modality(
     metadata: dict[str, Any],
 ) -> tuple[str | None, list[str]]:
-    """
-    Detect raster modality from available band metadata.
+    """Detect raster modality from available band metadata.
 
-    SAR is identified only when at least one recognized SAR
-    polarization is present.
-
-    Returns:
-        A tuple containing:
-        - modality: "sar" or None
-        - detected SAR polarizations
+    The Phase 2 data model treats multispectral imagery as a distinct
+    modality. Recognized Sentinel-style optical bands are classified as
+    ``multispectral`` when four or more spectral bands are present; a
+    smaller recognized optical set is classified as ``optical``. SAR is
+    identified from polarization metadata first.
     """
     polarizations = []
 
@@ -97,6 +94,9 @@ def _detect_modality(
     optical_bands = _detect_optical_band_evidence(metadata)
 
     if optical_bands:
+        if len(optical_bands) >= 4:
+            return "multispectral", optical_bands
+
         return "optical", optical_bands
 
     return None, []

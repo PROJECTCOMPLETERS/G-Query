@@ -1104,3 +1104,31 @@ IMPLEMENTATION READY
 ### Next Phase
 
 **Implementation begins with the agreed contracts and backend/orchestration foundation, followed by Data Engine, Frontend, Spatial integration, testing, and finally Phase 3 Model Engine integration.**
+
+---
+
+# Data Engine → Model Engine Handoff Addendum
+
+The Data Engine now exposes a generic handoff builder through
+`data_engine.model_input.build_model_input()`.
+
+The contract contains:
+
+* `schema_version`
+* `observation_id`
+* `input.type`
+* `input.path` for a prepared raster when available
+* `input.tensor` when a later model-specific pipeline has produced one
+* validated raster/spatial/acquisition metadata
+* executed preprocessing operations
+
+The Data Engine does **not** decide model-specific tensor layout, channel
+ordering, normalization statistics, tiling, model loading, or inference.
+Those decisions remain with the Phase 3 Model Engine. The generic contract
+therefore supports a prepared raster handoff immediately while allowing the
+Phase 3 pipeline to attach a tensor once its exact representation is fixed.
+
+For spatial preparation, the generic Data Engine execution layer now provides
+reprojection, resolution resampling, grid alignment to a reference raster,
+and generic percentile-based numeric normalization. These are reusable raster
+operations, not model-specific preprocessing.
