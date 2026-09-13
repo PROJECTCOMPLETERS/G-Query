@@ -85,10 +85,8 @@ class Orchestrator:
         context.set_query(structured_query)
 
         # Build task requirements first.
-        data_requirements = (
-            self.task_engine.build_data_requirements(
-                structured_query
-            )
+        data_requirements = self.task_engine.build_data_requirements(
+            structured_query
         )
 
         context.set_data_requirements(data_requirements)
@@ -117,10 +115,16 @@ class Orchestrator:
                 clarification=clarification,
             )
 
-        # Stop here until Rubin's implementation is connected.
+        # Requirements are satisfied.
+        # Wait for the Data Engine to determine data readiness.
+        self.query_service.update_status(
+            request_id,
+            RequestStatus.WAITING_FOR_DATA,
+        )
+
         return OrchestrationResult(
             request_id=request_id,
-            status=RequestStatus.REQUIREMENTS_CHECKED,
+            status=RequestStatus.WAITING_FOR_DATA,
             structured_query=structured_query,
             data_requirements=data_requirements,
         )
@@ -134,6 +138,7 @@ class Orchestrator:
             )
 
         return context
+
     def continue_with_data_readiness(
         self,
         request_id: str,
@@ -173,6 +178,7 @@ class Orchestrator:
             request_id,
             RequestStatus.READY,
         )
+
         self.query_service.update_status(
             request_id,
             RequestStatus.EXECUTION_PLANNED,

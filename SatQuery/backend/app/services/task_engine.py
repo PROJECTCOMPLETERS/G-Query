@@ -143,22 +143,16 @@ class TaskEngine:
             )
 
         if task_definition.temporal_required:
-            if (
-                query.temporal.information is None
-                and not query.temporal.required
-            ):
+            if query.temporal.information is None:
                 missing_information.append(
-                    "Temporal information is required."
+                "Temporal information is required."
                 )
 
         if task_definition.spatial_required:
-            if (
-                query.spatial.information is None
-                and not query.spatial.required
-            ):
+            if query.spatial.information is None:
                 missing_information.append(
-                    "Spatial information is required."
-                )
+                "Spatial information is required."
+            )
 
         if missing_information:
             return ClarificationResponse(
