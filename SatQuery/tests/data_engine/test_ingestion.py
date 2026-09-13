@@ -630,3 +630,55 @@ def test_data_engine_result_contract(tmp_path: Path):
     # Acquisition metadata must not be invented.
     assert "datetime" in result["acquisition"]
     assert result["acquisition"]["datetime"] is None
+
+
+def test_extract_acquisition_datetime_from_metadata(tmp_path: Path):
+    """An explicit acquisition datetime in GeoTIFF metadata should be extracted."""
+
+    path = tmp_path / "dated.tif"
+    transform = from_origin(80.0, 13.1, 10.0, 10.0)
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=20,
+        height=20,
+        count=1,
+        dtype="uint16",
+        crs="EPSG:32644",
+        transform=transform,
+    ) as dst:
+        dst.write(np.zeros((1, 20, 20), dtype=np.uint16))
+        dst.set_band_description(1, "B02")
+        dst.update_tags(ACQUISITION_DATETIME="2025-01-04T05:30:00Z")
+
+    result = process_file(path)
+
+    assert result["acquisition"]["datetime"] == "2025-01-04T05:30:00+00:00"
+
+
+def test_missing_acquisition_datetime_remains_none(tmp_path: Path):
+    """Missing acquisition metadata should remain explicitly unavailable."""
+
+    path = tmp_path / "undated.tif"
+    transform = from_origin(80.0, 13.1, 10.0, 10.0)
+
+    with rasterio.open(
+        path,
+        "w",
+        driver="GTiff",
+        width=20,
+        height=20,
+        count=1,
+        dtype="uint16",
+        crs="EPSG:32644",
+        transform=transform,
+    ) as dst:
+        dst.write(np.zeros((1, 20, 20), dtype=np.uint16))
+        dst.set_band_description(1, "B02")
+
+    result = process_file(path)
+
+    assert result["acquisition"]["datetime"] is None
+    

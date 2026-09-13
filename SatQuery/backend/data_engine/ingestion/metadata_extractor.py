@@ -1,5 +1,6 @@
 """Extract a stable, JSON-serializable metadata representation from imagery."""
 
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 import mimetypes
@@ -154,6 +155,71 @@ def _extract_bands(src) -> list[dict[str, Any]]:
     return bands
 
 
+def _parse_datetime(value: Any) -> str | None:
+    """
+    Parse a metadata value into an ISO-8601 datetime string.
+
+    Returns None when the value cannot be interpreted safely.
+    """
+
+    if value is None:
+        return None
+
+    text = str(value).strip()
+
+    if not text:
+        return None
+
+    # Handle common ISO-8601 UTC notation.
+    normalized = text.replace("Z", "+00:00")
+
+    try:
+        parsed = datetime.fromisoformat(normalized)
+        return parsed.isoformat()
+    except ValueError:
+        pass
+
+    # Handle common date-only metadata.
+    try:
+        parsed = datetime.strptime(text, "%Y-%m-%d")
+        return parsed.date().isoformat()
+    except ValueError:
+        return None
+
+
+def _extract_acquisition_datetime(tags: dict[str, Any]) -> str | None:
+    """
+    Extract acquisition datetime from explicit raster metadata.
+
+    Only metadata fields containing an explicit acquisition/date/time
+    value are considered. The function never infers a date from the
+    filename or filesystem information.
+    """
+
+    if not tags:
+        return None
+
+    candidate_keys = (
+        "ACQUISITION_DATETIME",
+        "ACQUISITION_DATE_TIME",
+        "ACQUISITION_DATE",
+    )
+
+    normalized_tags = {
+        str(key).strip().upper(): value
+        for key, value in tags.items()
+    }
+
+    for key in candidate_keys:
+        if key in normalized_tags:
+            parsed = _parse_datetime(normalized_tags[key])
+
+            if parsed is not None:
+                return parsed
+
+    return None
+
+
 def extract_metadata(path: str | Path) -> dict[str, Any]:
     p = Path(path).expanduser()
     kind = detect_file_type(p)
@@ -179,6 +245,8 @@ def extract_metadata(path: str | Path) -> dict[str, Any]:
                 str(k): str(v)
                 for k, v in src.tags().items()
             }
+
+            acquisition_datetime = _extract_acquisition_datetime(tags)
 
             return {
                 "source": _source(p, kind),
@@ -215,6 +283,10 @@ def extract_metadata(path: str | Path) -> dict[str, Any]:
                     src.crs,
                     src.bounds,
                 ),
+
+                "acquisition": {
+                    "datetime": acquisition_datetime,
+                },
 
                 "tags": tags,
             }
@@ -276,6 +348,10 @@ def extract_metadata(path: str | Path) -> dict[str, Any]:
                     "JPG/PNG has no geospatial "
                     "CRS/transform metadata"
                 ),
+            },
+
+            "acquisition": {
+                "datetime": None,
             },
 
             "tags": {

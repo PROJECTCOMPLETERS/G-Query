@@ -281,7 +281,7 @@ def process_file(path: str | Path) -> dict[str, Any]:
         "band_validation": band_validation,
         "spatial": spatial,
         "acquisition": {
-            # Do not invent acquisition metadata.
-            "datetime": None,
+            # Use only acquisition metadata explicitly extracted from the file.
+            "datetime": metadata.get("acquisition", {}).get("datetime"),
         },
     }
