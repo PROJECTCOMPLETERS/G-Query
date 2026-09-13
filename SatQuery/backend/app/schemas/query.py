@@ -53,3 +53,9 @@ class ClarificationResponse(ContractBase):
         default_factory=list
     )
     question: str
+class QueryRequest(BaseModel):
+    question: str
+    inputs: list[ObservationInput] = Field(default_factory=list)
+    modality: str | None = None
+class QueryAcceptedResponse(ContractBase):
+    status: str = "received"
