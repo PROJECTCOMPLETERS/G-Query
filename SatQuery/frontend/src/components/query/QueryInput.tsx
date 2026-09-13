@@ -2,7 +2,10 @@ import { useState } from "react";
 import FileUploader from "../upload/FileUploader";
 
 interface QueryInputProps {
-  onAnalyze: (query: string, file: File | null) => void;
+  onAnalyze: (
+    query: string,
+    file: File | null
+  ) => Promise<void>;
   analyzing: boolean;
 }
 
@@ -14,7 +17,7 @@ const QueryInput = ({
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState("");
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     const cleanedQuery = query.trim();
 
     if (!cleanedQuery && !file) {
@@ -25,10 +28,17 @@ const QueryInput = ({
     }
 
     setError("");
-    onAnalyze(cleanedQuery, file);
 
-    setQuery("");
-    setFile(null);
+    try {
+      await onAnalyze(cleanedQuery, file);
+
+      setQuery("");
+      setFile(null);
+    } catch {
+      setError(
+        "Failed to process your request. Please try again."
+      );
+    }
   };
 
   const handleKeyDown = (
@@ -40,7 +50,7 @@ const QueryInput = ({
       !analyzing
     ) {
       event.preventDefault();
-      handleAnalyze();
+      void handleAnalyze();
     }
   };
 
@@ -82,9 +92,10 @@ const QueryInput = ({
           <button
             type="button"
             className="send-btn"
-            onClick={handleAnalyze}
+            onClick={() => void handleAnalyze()}
             disabled={
-              analyzing || (!query.trim() && !file)
+              analyzing ||
+              (!query.trim() && !file)
             }
             aria-label="Send query"
           >
@@ -94,7 +105,10 @@ const QueryInput = ({
       </div>
 
       {error && (
-        <p className="composer-error" role="alert">
+        <p
+          className="composer-error"
+          role="alert"
+        >
           {error}
         </p>
       )}
