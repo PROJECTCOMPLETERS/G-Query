@@ -9,6 +9,22 @@ from data_engine.ingestion.metadata_extractor import extract_metadata
 
 SAR_POLARIZATIONS = {"VV", "VH", "HH", "HV"}
 
+OPTICAL_BAND_NAMES = {
+    "B01",
+    "B02",
+    "B03",
+    "B04",
+    "B05",
+    "B06",
+    "B07",
+    "B08",
+    "B8A",
+    "B09",
+    "B10",
+    "B11",
+    "B12",
+}
+
 
 def _extract_sar_polarization(name: str) -> str | None:
     """
@@ -36,6 +52,20 @@ def _extract_sar_polarization(name: str) -> str | None:
 
     return None
 
+def _detect_optical_band_evidence(
+    metadata: dict[str, Any],
+) -> list[str]:
+    """Return recognized optical band names found in raster metadata."""
+
+    detected = []
+
+    for band in metadata.get("bands", []):
+        name = str(band.get("name", "")).strip().upper()
+
+        if name in OPTICAL_BAND_NAMES and name not in detected:
+            detected.append(name)
+
+    return detected
 
 def _detect_modality(
     metadata: dict[str, Any],
@@ -63,6 +93,11 @@ def _detect_modality(
 
     if polarizations:
         return "sar", polarizations
+
+    optical_bands = _detect_optical_band_evidence(metadata)
+
+    if optical_bands:
+        return "optical", optical_bands
 
     return None, []
 

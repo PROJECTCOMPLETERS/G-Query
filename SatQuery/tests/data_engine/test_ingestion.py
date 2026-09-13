@@ -127,7 +127,7 @@ def test_controller_valid_optical_geotiff(tmp_path: Path):
     assert result["raster"]["height"] == 100
     assert result["raster"]["bands"] == 3
     assert result["raster"]["crs"] == "EPSG:32644"
-    assert result["raster"]["modality"] is None
+    assert result["raster"]["modality"] == "optical"
 
     assert result["band_validation"]["valid"] is True
     assert result["band_validation"]["same_dtype"] is True
@@ -681,4 +681,3 @@ def test_missing_acquisition_datetime_remains_none(tmp_path: Path):
     result = process_file(path)
 
     assert result["acquisition"]["datetime"] is None
-    
