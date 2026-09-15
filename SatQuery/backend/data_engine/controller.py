@@ -301,7 +301,9 @@ def process_file(path: str | Path) -> dict[str, Any]:
     }
     # 6. Build standardized spatial information.
     spatial = {
+        # WGS84 bounds are the canonical observation AOI for downstream spatial queries.
         "bounds": geographic["wgs84_bounds"],
+        "wgs84_bounds": geographic["wgs84_bounds"],
         "centroid": geographic["centroid_wgs84"],
         "map_ready": geographic["map_ready"],
     }
