@@ -1132,3 +1132,130 @@ For spatial preparation, the generic Data Engine execution layer now provides
 reprojection, resolution resampling, grid alignment to a reference raster,
 and generic percentile-based numeric normalization. These are reusable raster
 operations, not model-specific preprocessing.
+
+---
+
+# Data Engine Reference Geospatial Layer Handoff
+
+The Data Engine uses the satellite observation's WGS84 geographic extent as the
+Area of Interest (AOI) for reference-layer queries. `process_file()` exposes
+this as `spatial.wgs84_bounds` (with `spatial.bounds` retained for compatibility).
+
+Reference features are **not embedded in satellite dataset documents**. They
+remain separate geospatial sources and are queried only when needed for an
+observation AOI.
+
+## Reference layer interface
+
+A reference layer is registered independently:
+
+```python
+from data_engine.reference import ReferenceLayer, ReferenceLayerRegistry
+
+registry = ReferenceLayerRegistry([
+    ReferenceLayer(
+        layer_id="roads",
+        name="Roads",
+        source_path="reference/roads.geojson",
+        source_crs="EPSG:4326",
+        category="transportation",
+    ),
+    ReferenceLayer(
+        layer_id="water",
+        name="Water bodies",
+        source_path="reference/water.geojson",
+        source_crs="EPSG:4326",
+        category="hydrology",
+    ),
+])
+```
+
+The source path is held by the reference-layer registry, not copied into each
+satellite observation.
+
+## Query contract
+
+```python
+from data_engine import query_reference_features
+
+result = query_reference_features(observation, registry)
+```
+
+The returned structure is:
+
+```json
+{
+  "schema_version": "1.0",
+  "observation_id": "obs_001",
+  "aoi": {
+    "crs": "EPSG:4326",
+    "bounds": {
+      "west": 80.0,
+      "south": 13.0,
+      "east": 80.2,
+      "north": 13.2
+    },
+    "geometry": { "type": "Polygon", "coordinates": [] }
+  },
+  "output_crs": "EPSG:4326",
+  "format": "GeoJSON",
+  "layers": [
+    {
+      "layer_id": "roads",
+      "name": "Roads",
+      "category": "transportation",
+      "source_crs": "EPSG:4326",
+      "output_crs": "EPSG:4326",
+      "status": "available",
+      "feature_count": 1,
+      "geojson": {
+        "type": "FeatureCollection",
+        "features": []
+      },
+      "error": null
+    }
+  ]
+}
+```
+
+Features are selected when their geometry **intersects the observation AOI**.
+Reference geometries may originate in another CRS; the Data Engine transforms
+them to WGS84 before spatial filtering/output. This gives downstream backend
+and frontend consumers one compatible geographic representation.
+
+The current source adapter is GeoJSON. The registry/interface is intentionally
+provider-neutral so future sources such as OSM or other authoritative reference
+providers can be added without changing the satellite observation schema.
+
+## Responsibility boundary
+
+```text
+Satellite GeoTIFF
+      |
+      | spatial.wgs84_bounds
+      v
+Observation AOI (EPSG:4326)
+      |
+      v
+Reference Layer Registry
+      |
+      +--> Roads
+      +--> Water bodies
+      +--> Buildings
+      +--> Administrative boundaries
+      +--> Other registered layers
+      |
+      v
+Data Engine spatial query
+      |
+      v
+WGS84 GeoJSON FeatureCollections
+      |
+      v
+Backend / Frontend
+      |
+      v
+Vignesh / MapLibre rendering and layer controls
+```
+
+The Data Engine does not render maps or own MapLibre layer controls.
