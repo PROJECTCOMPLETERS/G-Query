@@ -7,7 +7,9 @@ from app.services.upload_service import UploadService
 from app.storage.implementations.gridfs_file_storage import (
     GridFSFileStorage,
 )
-
+from app.services.reference_layer_service import ReferenceLayerService
+from data_engine import ReferenceLayerRegistry
+from app.config.reference_layers import get_reference_layer_registry
 
 def get_dataset_service() -> DatasetService:
     from app.storage.implementations.mongodb_dataset_storage import (
@@ -46,4 +48,15 @@ def get_file_service(
     return FileService(
         storage=file_storage,
         dataset_service=dataset_service,
+    )
+
+def get_reference_layer_service(
+    dataset_service: DatasetService = Depends(
+        get_dataset_service
+    ),
+) -> ReferenceLayerService:
+
+    return ReferenceLayerService(
+        dataset_service=dataset_service,
+        reference_layer_registry=get_reference_layer_registry(),
     )

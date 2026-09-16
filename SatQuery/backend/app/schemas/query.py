@@ -58,4 +58,6 @@ class QueryRequest(BaseModel):
     inputs: list[ObservationInput] = Field(default_factory=list)
     modality: str | None = None
 class QueryAcceptedResponse(ContractBase):
+    request_id: str
     status: str = "received"
+    structured_query: StructuredQuery | None = None

@@ -16,40 +16,65 @@ from data_engine.reference.registry import ReferenceLayer
 WGS84 = "EPSG:4326"
 
 
-def _load_geojson(path: str | Path) -> dict[str, Any]:
-    source_path = Path(path)
-    if not source_path.exists():
-        raise FileNotFoundError(f"Reference layer source not found: {source_path}")
+def _load_geojson(
+    path: str | Path,
+) -> dict[str, Any]:
 
-    with source_path.open("r", encoding="utf-8") as handle:
+    source_path = Path(path)
+
+    if not source_path.exists():
+        raise FileNotFoundError(
+            f"Reference layer source not found: {source_path}"
+        )
+
+    with source_path.open(
+        "r",
+        encoding="utf-8",
+    ) as handle:
         document = json.load(handle)
 
     if document.get("type") == "FeatureCollection":
         return document
+
     if document.get("type") == "Feature":
         return {
             "type": "FeatureCollection",
             "features": [document],
         }
 
-    raise ValueError("Reference source must be a GeoJSON FeatureCollection or Feature.")
+    raise ValueError(
+        "Reference source must be a GeoJSON "
+        "FeatureCollection or Feature."
+    )
 
 
-def _transformer(source_crs: str, target_crs: str = WGS84) -> Transformer | None:
+def _transformer(
+    source_crs: str,
+    target_crs: str = WGS84,
+) -> Transformer | None:
+
     source = CRS.from_user_input(source_crs)
     target = CRS.from_user_input(target_crs)
+
     if source == target:
         return None
-    return Transformer.from_crs(source, target, always_xy=True)
+
+    return Transformer.from_crs(
+        source,
+        target,
+        always_xy=True,
+    )
 
 
 def query_geojson_layer(
     layer: ReferenceLayer,
     aoi_bounds: dict[str, float],
 ) -> dict[str, Any]:
-    """Return GeoJSON features intersecting the WGS84 AOI."""
 
-    document = _load_geojson(layer.source_path)
+    document = _load_geojson(
+        layer.source_path
+    )
+
     aoi = box(
         float(aoi_bounds["west"]),
         float(aoi_bounds["south"]),
@@ -57,42 +82,66 @@ def query_geojson_layer(
         float(aoi_bounds["north"]),
     )
 
-    transformer = _transformer(layer.source_crs)
-    features: list[dict[str, Any]] = []
+    transformer = _transformer(
+        layer.source_crs
+    )
 
-    for index, feature in enumerate(document.get("features", [])):
-        if not isinstance(feature, dict) or feature.get("type") != "Feature":
+    features = []
+
+    for index, feature in enumerate(
+        document.get("features", [])
+    ):
+
+        if (
+            not isinstance(feature, dict)
+            or feature.get("type") != "Feature"
+        ):
             continue
 
         geometry_data = feature.get("geometry")
+
         if not geometry_data:
             continue
 
-        geometry = shape(geometry_data)
-        if geometry.is_empty or not geometry.is_valid:
+        try:
+            geometry = shape(geometry_data)
+        except Exception:
+            continue
+
+        if geometry.is_empty:
             continue
 
         if transformer is not None:
-            geometry_wgs84 = shapely_transform(transformer.transform, geometry)
+            geometry_wgs84 = shapely_transform(
+                transformer.transform,
+                geometry,
+            )
         else:
             geometry_wgs84 = geometry
 
-        if not geometry_wgs84.is_valid or geometry_wgs84.is_empty:
+        if geometry_wgs84.is_empty:
             continue
 
         if not geometry_wgs84.intersects(aoi):
             continue
 
         properties = feature.get("properties")
+
         if not isinstance(properties, dict):
             properties = {}
 
-        feature_id = feature.get("id", index)
+        feature_id = feature.get(
+            "id",
+            index,
+        )
+
         features.append(
             {
                 "type": "Feature",
                 "id": feature_id,
-                "geometry": mapping(geometry_wgs84),
+                "geometry": mapping(
+                    geometry_wgs84
+                ),
                 "properties": properties,
             }
         )
