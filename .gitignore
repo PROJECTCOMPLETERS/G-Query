@@ -234,3 +234,6 @@ build/
 datasets/*.tif
 datasets/*.tiff
 .html
+# Generated reference data
+data/reference/*.geojson
+data/reference/*.pbf
