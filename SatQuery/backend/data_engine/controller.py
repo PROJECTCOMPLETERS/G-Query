@@ -296,26 +296,20 @@ def process_file(path: str | Path) -> dict[str, Any]:
 
     # 7. Build standardized raster information.
     raster = {
-        "width": metadata["width"],
-        "height": metadata["height"],
-        "bands": metadata["band_count"],
-        "band_details": metadata.get("bands", []),
-        "resolution": metadata["resolution"],
-        "crs": (
-            geographic["source_crs"]
-            if geographic["source_crs"] is not None
-            else None
-        ),
-
-        # Existing modality field.
-        "modality": modality,
-
-        # Exact file size in bytes.
-        "file_size": file_size,
-
-        # Preserve the existing affine transform.
-        "transform": metadata.get("transform"),
-    }
+    "width": metadata["width"],
+    "height": metadata["height"],
+    "bands": metadata["band_count"],
+    "band_details": metadata.get("bands", []),
+    "resolution": metadata["resolution"],
+    "transform": metadata.get("transform"),
+    "crs": (
+        geographic["source_crs"]
+        if geographic["source_crs"] is not None
+        else None
+    ),
+    "modality": modality,
+    "file_size": file_size,
+}
 
     # 8. Build standardized spatial information.
     spatial = {
