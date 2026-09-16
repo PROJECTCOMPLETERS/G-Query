@@ -11,3 +11,4 @@ shapely
 pyproj
 rasterio
 numpy
+mapbox_vector_tile

@@ -30,9 +30,7 @@ export default function Navbar({
       </button>
 
       <div className="nav-links">
-        <button onClick={onNew}>New chat</button>
-        <button onClick={onHistory}>History</button>
-        <button onClick={onAbout}>About</button>
+        
       </div>
     </nav>
   );

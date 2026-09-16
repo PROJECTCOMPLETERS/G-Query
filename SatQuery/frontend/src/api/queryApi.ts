@@ -7,6 +7,7 @@ import {
   type QueryResponse,
 } from "../types/query";
 
+
 // Configure only after the backend exposes these endpoints.
 const paths = {
   status: import.meta.env.VITE_QUERY_STATUS_PATH as string | undefined,
@@ -37,11 +38,12 @@ export async function submitQuery(
   input: QueryInput,
   signal: AbortSignal
 ) {
+     console.log(input);
   const { data } = await api.post("/api/v1/query", input, {
     signal,
     timeout: 30000,
   });
-
+   
   // Current backend generates the ID.
   // Every subsequent operation uses that returned ID.
   return parseQuery(data);

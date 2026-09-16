@@ -1,30 +1,28 @@
-import { useState } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
-import DatasetInfo from "./DatasetInfo";
-import MapView from "../map/MapView";
-import QueryStatus from "../query/QueryStatus";
+import DatasetInfo from './DatasetInfo';
+import MapView from '../map/MapView';
+import QueryStatus from '../query/QueryStatus';
 
-import type { ChatMessage } from "../../types/query";
+import type { ChatMessage } from '../../types/query';
 
-export type { ChatMessage } from "../../types/query";
+export type { ChatMessage } from '../../types/query';
 
 interface Props {
   messages: ChatMessage[];
   busy: boolean;
-
   onRetry: (message: ChatMessage) => void;
   onRegenerate: (message: ChatMessage) => void;
   onEdit: (message: ChatMessage) => void;
-
   onData: () => void;
   onAnswer: (answer: string) => void;
-  onFeedback: (id: string, value: "up" | "down") => void;
+  onFeedback: (id: string, value: 'up' | 'down') => void;
 }
 
 const isWebImage = (value: unknown): value is string =>
-  typeof value === "string" && /^https?:\/\//i.test(value);
+  typeof value === 'string' && /^https?:\/\//i.test(value);
 
 export default function ResultPanel({
   messages,
@@ -36,11 +34,11 @@ export default function ResultPanel({
   onAnswer,
   onFeedback,
 }: Props) {
-  const [copyStatus, setCopyStatus] = useState("");
+  const [copyStatus, setCopyStatus] = useState('');
 
-  const latestId = [...messages]
+  const latest = [...messages]
     .reverse()
-    .find((message) => message.role === "assistant")?.id;
+    .find(message => message.role === 'assistant')?.id;
 
   async function copy(message: ChatMessage) {
     try {
@@ -49,11 +47,9 @@ export default function ResultPanel({
           JSON.stringify(message.response?.result || {}, null, 2)
       );
 
-      setCopyStatus("Copied");
+      setCopyStatus('Copied');
     } catch {
-      setCopyStatus(
-        "Copy unavailable; select the text and copy it."
-      );
+      setCopyStatus('Copy unavailable; select the text and copy it.');
     }
   }
 
@@ -63,7 +59,7 @@ export default function ResultPanel({
         {copyStatus}
       </p>
 
-      {messages.map((message) => {
+      {messages.map(message => {
         const response = message.response;
         const result = response?.result;
         const metadata = response?.metadata;
@@ -73,15 +69,13 @@ export default function ResultPanel({
             key={message.id}
             className={`message ${message.role}`}
           >
-            <div className="message-avatar">
-              {message.role === "user" ? "P" : "🛰️"}
-            </div>
+            {message.role === 'assistant' && (
+              <div className="message-avatar">🛰️</div>
+            )}
 
             <div className="message-content">
               <strong>
-                {message.role === "user"
-                  ? "You"
-                  : "SatQuery AI"}
+                {message.role === 'user' ? 'You' : 'SatQuery AI'}
               </strong>
 
               {message.fileName && (
@@ -90,11 +84,11 @@ export default function ResultPanel({
                 </div>
               )}
 
-              {message.role === "assistant" && (
+              {message.role === 'assistant' && (
                 <QueryStatus
                   response={response}
-                  busy={busy && message.id === latestId}
-                  latest={message.id === latestId}
+                  busy={busy && message.id === latest}
+                  latest={message.id === latest}
                   stopped={message.stopped}
                   onRetry={() => onRetry(message)}
                   onData={onData}
@@ -128,19 +122,19 @@ export default function ResultPanel({
                     <dd>
                       {response.intent ||
                         response.task ||
-                        "Not returned yet"}
+                        'Not returned yet'}
                     </dd>
 
                     <dt>Inputs</dt>
                     <dd>
                       {response.inputs
-                        ?.map((input) => input.input_id)
-                        .join(", ") || "Not returned yet"}
+                        ?.map(input => input.input_id)
+                        .join(', ') || 'Not returned yet'}
                     </dd>
 
                     <dt>Modality</dt>
                     <dd>
-                      {response.modality || "Not returned yet"}
+                      {response.modality || 'Not returned yet'}
                     </dd>
 
                     <dt>Status</dt>
@@ -149,7 +143,7 @@ export default function ResultPanel({
                 </details>
               )}
 
-              {response?.status === "COMPLETED" && (
+              {response?.status === 'COMPLETED' && (
                 <>
                   {isWebImage(result?.image_url) && (
                     <img
@@ -162,18 +156,20 @@ export default function ResultPanel({
                   {result && (
                     <details className="query-details">
                       <summary>Structured result</summary>
-                      <pre>{JSON.stringify(result, null, 2)}</pre>
+                      <pre>
+                        {JSON.stringify(result, null, 2)}
+                      </pre>
                     </details>
                   )}
 
-                  {typeof metadata?.confidence === "number" && (
+                  {typeof metadata?.confidence === 'number' && (
                     <p>
-                      Confidence:{" "}
+                      Confidence:{' '}
                       {(metadata.confidence * 100).toFixed(1)}%
                     </p>
                   )}
 
-                  {typeof metadata?.processing_ms === "number" && (
+                  {typeof metadata?.processing_ms === 'number' && (
                     <p>
                       Processing: {metadata.processing_ms} ms
                     </p>
@@ -206,7 +202,6 @@ export default function ResultPanel({
               {message.dataset && (
                 <>
                   <DatasetInfo dataset={message.dataset} />
-
                   <MapView
                     dataset={message.dataset}
                     demoMode={false}
@@ -222,7 +217,7 @@ export default function ResultPanel({
                   Copy
                 </button>
 
-                {message.role === "user" && (
+                {message.role === 'user' && (
                   <button
                     className="message-action"
                     disabled={busy}
@@ -232,11 +227,11 @@ export default function ResultPanel({
                   </button>
                 )}
 
-                {response?.status === "COMPLETED" && (
+                {response?.status === 'COMPLETED' && (
                   <>
                     <button
                       className="message-action"
-                      disabled={busy || message.id !== latestId}
+                      disabled={busy || message.id !== latest}
                       onClick={() => onRegenerate(message)}
                     >
                       Regenerate
@@ -244,16 +239,20 @@ export default function ResultPanel({
 
                     <button
                       className="message-action"
-                      aria-pressed={message.feedback === "up"}
-                      onClick={() => onFeedback(message.id, "up")}
+                      aria-pressed={message.feedback === 'up'}
+                      onClick={() =>
+                        onFeedback(message.id, 'up')
+                      }
                     >
                       Helpful
                     </button>
 
                     <button
                       className="message-action"
-                      aria-pressed={message.feedback === "down"}
-                      onClick={() => onFeedback(message.id, "down")}
+                      aria-pressed={message.feedback === 'down'}
+                      onClick={() =>
+                        onFeedback(message.id, 'down')
+                      }
                     >
                       Not helpful
                     </button>
