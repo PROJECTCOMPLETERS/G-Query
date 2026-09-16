@@ -9,22 +9,6 @@ from data_engine.ingestion.metadata_extractor import extract_metadata
 
 SAR_POLARIZATIONS = {"VV", "VH", "HH", "HV"}
 
-OPTICAL_BAND_NAMES = {
-    "B01",
-    "B02",
-    "B03",
-    "B04",
-    "B05",
-    "B06",
-    "B07",
-    "B08",
-    "B8A",
-    "B09",
-    "B10",
-    "B11",
-    "B12",
-}
-
 
 def _extract_sar_polarization(name: str) -> str | None:
     """
@@ -52,32 +36,25 @@ def _extract_sar_polarization(name: str) -> str | None:
 
     return None
 
-def _detect_optical_band_evidence(
-    metadata: dict[str, Any],
-) -> list[str]:
-    """Return recognized optical band names found in raster metadata."""
-
-    detected = []
-
-    for band in metadata.get("bands", []):
-        name = str(band.get("name", "")).strip().upper()
-
-        if name in OPTICAL_BAND_NAMES and name not in detected:
-            detected.append(name)
-
-    return detected
 
 def _detect_modality(
     metadata: dict[str, Any],
 ) -> tuple[str | None, list[str]]:
-    """Detect raster modality from available band metadata.
-
-    The Phase 2 data model treats multispectral imagery as a distinct
-    modality. Recognized Sentinel-style optical bands are classified as
-    ``multispectral`` when four or more spectral bands are present; a
-    smaller recognized optical set is classified as ``optical``. SAR is
-    identified from polarization metadata first.
     """
+    Detect raster modality from available band metadata.
+
+    SAR is identified when at least one recognized SAR polarization
+    is present.
+
+    Sentinel-style optical imagery with four or more recognized
+    optical bands is classified as multispectral.
+
+    Returns:
+        A tuple containing:
+        - modality: "sar", "multispectral", "optical", or None
+        - detected SAR polarizations
+    """
+
     polarizations = []
 
     for band in metadata.get("bands", []):
@@ -88,16 +65,40 @@ def _detect_modality(
         if polarization and polarization not in polarizations:
             polarizations.append(polarization)
 
+    # SAR takes priority when polarization metadata is present.
     if polarizations:
         return "sar", polarizations
 
-    optical_bands = _detect_optical_band_evidence(metadata)
+    # Sentinel-style optical bands.
+    optical_band_names = {
+        "B01",
+        "B02",
+        "B03",
+        "B04",
+        "B05",
+        "B06",
+        "B07",
+        "B08",
+        "B8A",
+        "B09",
+        "B10",
+        "B11",
+        "B12",
+    }
 
-    if optical_bands:
-        if len(optical_bands) >= 4:
-            return "multispectral", optical_bands
+    detected_optical_bands = []
 
-        return "optical", optical_bands
+    for band in metadata.get("bands", []):
+        band_name = str(band.get("name", "")).upper()
+
+        if band_name in optical_band_names:
+            detected_optical_bands.append(band_name)
+
+    if len(set(detected_optical_bands)) >= 4:
+        return "multispectral", []
+
+    if detected_optical_bands:
+        return "optical", []
 
     return None, []
 
@@ -149,6 +150,7 @@ def _validate_bands(
     }
 
     same_dtype = len(dtypes) == 1
+
     same_dimensions = (
         len(widths) == 1
         and len(heights) == 1
@@ -257,12 +259,16 @@ def process_file(path: str | Path) -> dict[str, Any]:
     - validates the input file
     - extracts raster metadata
     - identifies SAR metadata when available
+    - detects raster modality
+    - records file size
     - validates band consistency
     - extracts spatial information
     - returns a standardized Data Engine result
 
     It does not perform ML inference or semantic interpretation.
     """
+
+    path = Path(path)
 
     # 1. Basic file validation.
     file_info = validate_file(path)
@@ -282,31 +288,42 @@ def process_file(path: str | Path) -> dict[str, Any]:
         polarizations,
     )
 
-    # 5. Build standardized raster information.
+    # 5. Get actual file size.
+    file_size = path.stat().st_size
+
+    # 6. Get geographic metadata.
     geographic = metadata["geographic"]
 
+    # 7. Build standardized raster information.
     raster = {
-        "width": metadata["width"],
-        "height": metadata["height"],
-        "bands": metadata["band_count"],
-        "band_details": metadata.get("bands", []),
-        "resolution": metadata["resolution"],
-        "transform": metadata.get("transform"),
-        "crs": (
-            geographic["source_crs"]
-            if geographic["source_crs"] is not None
-            else None
-        ),
-        "modality": modality,
-    }
-    # 6. Build standardized spatial information.
+    "width": metadata["width"],
+    "height": metadata["height"],
+    "bands": metadata["band_count"],
+    "band_details": metadata.get("bands", []),
+    "resolution": metadata["resolution"],
+    "transform": metadata.get("transform"),
+    "crs": (
+        geographic["source_crs"]
+        if geographic["source_crs"] is not None
+        else None
+    ),
+    "modality": modality,
+    "file_size": file_size,
+}
+
+    # 8. Build standardized spatial information.
     spatial = {
+        # WGS84 bounds are the canonical observation AOI for downstream spatial queries.
         "bounds": geographic["wgs84_bounds"],
+        "wgs84_bounds": geographic["wgs84_bounds"],
         "centroid": geographic["centroid_wgs84"],
         "map_ready": geographic["map_ready"],
     }
 
-    # 7. Return Data Engine result.
+    # 9. Preserve extracted acquisition metadata.
+    acquisition = metadata.get("acquisition", {})
+
+    # 10. Return Data Engine result.
     return {
         "valid": (
             file_info["valid"]
@@ -316,7 +333,6 @@ def process_file(path: str | Path) -> dict[str, Any]:
         "band_validation": band_validation,
         "spatial": spatial,
         "acquisition": {
-            # Use only acquisition metadata explicitly extracted from the file.
-            "datetime": metadata.get("acquisition", {}).get("datetime"),
+            "datetime": acquisition.get("datetime"),
         },
     }

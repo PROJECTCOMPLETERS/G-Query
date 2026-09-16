@@ -32,6 +32,7 @@ def create_query(
     )
 
     return QueryAcceptedResponse(
-        request_id=request_id,
-        status=result.status.value,
-    )
+    request_id=request_id,
+    status=result.status.value,
+    structured_query=result.structured_query,
+)
