@@ -10,3 +10,4 @@ Pillow
 shapely
 pyproj
 rasterio
+numpy
