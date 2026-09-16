@@ -161,3 +161,89 @@ def test_change_detection_requires_two_observations():
     assert "2 observation" in (
         clarification.missing_information[0]
     )
+def test_change_detection_accepts_complete_temporal_and_spatial_info():
+    engine = TaskEngine()
+
+    query = StructuredQuery(
+        request_id="req_408",
+        question="Compare these two satellite images for changes",
+        intent="change_detection",
+        inputs=[
+            {"input_id": "obs_001", "type": "image"},
+            {"input_id": "obs_002", "type": "image"},
+        ],
+        temporal={
+            "required": True,
+            "information": {
+                "start_time": "2026-01-01",
+                "end_time": "2026-06-01",
+            },
+        },
+        spatial={
+            "required": True,
+            "information": {
+                "region": "Chennai",
+            },
+        },
+    )
+
+    clarification = engine.check_requirements(query)
+
+    assert clarification is None
+
+
+def test_change_detection_missing_temporal_information():
+    engine = TaskEngine()
+
+    query = StructuredQuery(
+        request_id="req_409",
+        question="Compare these two satellite images for changes",
+        intent="change_detection",
+        inputs=[
+            {"input_id": "obs_001", "type": "image"},
+            {"input_id": "obs_002", "type": "image"},
+        ],
+        spatial={
+            "required": True,
+            "information": {
+                "region": "Chennai",
+            },
+        },
+    )
+
+    clarification = engine.check_requirements(query)
+
+    assert clarification is not None
+    assert clarification.status == "needs_clarification"
+    assert "Temporal information is required." in (
+        clarification.missing_information
+    )
+
+
+def test_change_detection_missing_spatial_information():
+    engine = TaskEngine()
+
+    query = StructuredQuery(
+        request_id="req_410",
+        question="Compare these two satellite images for changes",
+        intent="change_detection",
+        inputs=[
+            {"input_id": "obs_001", "type": "image"},
+            {"input_id": "obs_002", "type": "image"},
+        ],
+        temporal={
+            "required": True,
+            "information": {
+                "start_time": "2026-01-01",
+                "end_time": "2026-06-01",
+            },
+        },
+    )
+
+    clarification = engine.check_requirements(query)
+
+    assert clarification is not None
+    assert clarification.status == "needs_clarification"
+    assert "Spatial information is required." in (
+        clarification.missing_information
+    )

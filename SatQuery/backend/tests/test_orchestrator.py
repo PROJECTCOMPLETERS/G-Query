@@ -15,7 +15,7 @@ def test_orchestrator_normal_flow():
         modality="optical",
     )
 
-    assert result.status == RequestStatus.REQUIREMENTS_CHECKED
+    assert result.status == RequestStatus.WAITING_FOR_DATA
     assert result.structured_query is not None
     assert result.data_requirements is not None
     assert result.data_requirements.task == "object_counting"
