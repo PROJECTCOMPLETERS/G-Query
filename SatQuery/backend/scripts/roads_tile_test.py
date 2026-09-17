@@ -14,7 +14,7 @@ REFERENCE_DIR = (
 )
 
 
-def test_layer(
+def generate_test_layer(
     layer_name: str,
     z: int,
     x: int,
@@ -59,14 +59,14 @@ def main():
     x = 23686
     y = 15183
 
-    test_layer(
+    generate_test_layer(
         layer_name="roads",
         z=z,
         x=x,
         y=y,
     )
 
-    test_layer(
+    generate_test_layer(
         layer_name="buildings",
         z=z,
         x=x,

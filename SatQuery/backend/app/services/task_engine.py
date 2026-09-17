@@ -195,7 +195,7 @@ class TaskEngine:
             request_id=query.request_id,
             task=task_definition.task,
             input_observations=readiness.available_observations,
-            required_modalities=task_definition.allowed_modalities,
+           required_modalities=([query.modality]if query.modality else task_definition.allowed_modalities),
             temporal_requirements={
                 "required": task_definition.temporal_required,
                 "information": query.temporal.information,

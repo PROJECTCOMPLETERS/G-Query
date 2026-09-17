@@ -3,7 +3,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.schemas.contract import ContractBase
-
+from app.schemas.task import ExecutionPlan
 
 class ObservationInput(BaseModel):
     input_id: str
@@ -61,3 +61,4 @@ class QueryAcceptedResponse(ContractBase):
     request_id: str
     status: str = "received"
     structured_query: StructuredQuery | None = None
+    execution_plan: ExecutionPlan | None = None

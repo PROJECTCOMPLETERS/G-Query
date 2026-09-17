@@ -1,0 +1,695 @@
+{
+  "greeting": {
+    "en": [
+      "hello",
+      "hi",
+      "hey",
+      "good morning",
+      "good afternoon",
+      "good evening",
+      "hello satquery",
+      "hi satquery",
+      "hey there",
+      "hello there",
+      "how are you",
+      "how are you doing",
+      "nice to meet you",
+      "hey satquery",
+      "hi there"
+    ],
+    "ta": [
+      "வணக்கம்",
+      "ஹாய்",
+      "ஹலோ",
+      "காலை வணக்கம்",
+      "மாலை வணக்கம்",
+      "எப்படி இருக்கிறாய்",
+      "எப்படி இருக்கீங்க",
+      "வணக்கம் சாட்க்யூரி",
+      "ஹலோ சாட்க்யூரி"
+    ],
+    "ta_latn": [
+      "vanakkam",
+      "hai",
+      "hello",
+      "hi",
+      "epdi irukka",
+      "epdi irukkinga",
+      "good morning",
+      "good evening",
+      "vanakkam satquery",
+      "hello satquery",
+      "hi satquery",
+      "epdi pogudhu",
+      "enna nadakudhu"
+    ],
+    "mixed": [
+      "வணக்கம் satquery",
+      "hello சாட்க்யூரி",
+      "hi satquery எப்படி இருக்க",
+      "வணக்கம் how are you",
+      "ஹாய் satquery",
+      "hello எப்படி இருக்கீங்க",
+      "vanakkam satquery",
+      "hi எப்படி இருக்கு"
+    ]
+  },
+
+  "farewell": {
+    "en": [
+      "goodbye",
+      "bye",
+      "bye for now",
+      "see you later",
+      "see you soon",
+      "talk to you later",
+      "I am leaving",
+      "I have to go",
+      "that's all for now",
+      "end the conversation",
+      "have a good day",
+      "have a nice day",
+      "catch you later",
+      "see you next time",
+      "I will leave now"
+    ],
+    "ta": [
+      "பிரியாவிடை",
+      "நான் போகிறேன்",
+      "நான் கிளம்புகிறேன்",
+      "பிறகு பேசலாம்",
+      "மீண்டும் சந்திப்போம்",
+      "பிறகு பார்க்கலாம்",
+      "நான் இப்போது செல்கிறேன்",
+      "சரி நான் போகிறேன்",
+      "அவ்வளவுதான்",
+      "நாளை பார்க்கலாம்"
+    ],
+    "ta_latn": [
+      "bye",
+      "goodbye",
+      "naan poren",
+      "naan kelamburen",
+      "seri bye",
+      "apparam pesalam",
+      "apparam paakalam",
+      "thirumba pesalam",
+      "naan ippo poren",
+      "avlodhan",
+      "see you later",
+      "next time pesalam",
+      "naan kelamburen bye",
+      "seri naan poren"
+    ],
+    "mixed": [
+      "சரி bye",
+      "நான் போறேன் bye",
+      "bye அப்புறம் பேசலாம்",
+      "நான் இப்போது leaving",
+      "சரி நான் போகிறேன்",
+      "see you அப்புறம்",
+      "bye மீண்டும் பேசலாம்",
+      "seri bye naan poren",
+      "அவ்வளவுதான் bye",
+      "நான் kelamburen bye"
+    ]
+  },
+
+  "thanks": {
+    "en": [
+      "thank you",
+      "thanks",
+      "thanks a lot",
+      "thank you so much",
+      "many thanks",
+      "I appreciate it",
+      "that was helpful",
+      "thanks for your help",
+      "thank you for explaining",
+      "much appreciated"
+    ],
+    "ta": [
+      "நன்றி",
+      "மிக்க நன்றி",
+      "ரொம்ப நன்றி",
+      "உதவியதற்கு நன்றி",
+      "விளக்கியதற்கு நன்றி"
+    ],
+    "ta_latn": [
+      "nandri",
+      "romba nandri",
+      "mikka nandri",
+      "thanks",
+      "thank you",
+      "help pannadhukku nandri",
+      "explain pannadhukku nandri",
+      "romba thanks"
+    ],
+    "mixed": [
+      "ரொம்ப thanks",
+      "நன்றி for your help",
+      "thanks ரொம்ப useful ah irundhudhu",
+      "மிக்க நன்றி",
+      "thank you ரொம்ப helpful",
+      "nandri for explaining"
+    ]
+  },
+
+  "acknowledgement": {
+    "en": [
+      "okay",
+      "ok",
+      "alright",
+      "got it",
+      "understood",
+      "sure",
+      "yes",
+      "right",
+      "sounds good",
+      "that makes sense",
+      "I understand",
+      "okay got it",
+      "sure understood",
+      "alright then"
+    ],
+    "ta": [
+      "சரி",
+      "புரிந்தது",
+      "சரி புரிந்தது",
+      "ஆம்",
+      "ஆமாம்",
+      "பரவாயில்லை",
+      "சரிதான்",
+      "புரிகிறது"
+    ],
+    "ta_latn": [
+      "seri",
+      "purinjiduchu",
+      "purinjadhu",
+      "aama",
+      "ama",
+      "sari",
+      "ok",
+      "seri purinjiduchu",
+      "right",
+      "sure",
+      "correct"
+    ],
+    "mixed": [
+      "சரி got it",
+      "புரிந்தது okay",
+      "seri got it",
+      "aama okay",
+      "சரி understood",
+      "purinjiduchu okay",
+      "right சரி",
+      "sure சரி"
+    ]
+  },
+
+  "capability_question": {
+    "en": [
+      "what can you do",
+      "what can you help me with",
+      "what are your capabilities",
+      "what tasks can you perform",
+      "what can satquery do",
+      "what does satquery do",
+      "what features do you have",
+      "how can you help me",
+      "what can I ask you",
+      "what kind of analysis can you perform"
+    ],
+    "ta": [
+      "நீ என்ன செய்ய முடியும்",
+      "நீங்கள் என்ன செய்ய முடியும்",
+      "சாட்க்யூரி என்ன செய்யும்",
+      "என்ன உதவி செய்ய முடியும்",
+      "என்னென்ன வேலை செய்ய முடியும்"
+    ],
+    "ta_latn": [
+      "nee enna panna mudiyum",
+      "neenga enna panna mudiyum",
+      "satquery enna panna mudiyum",
+      "enna help panna mudiyum",
+      "enna analysis panna mudiyum",
+      "nee enna tasks panna mudiyum",
+      "enna features irukku"
+    ],
+    "mixed": [
+      "நீ என்ன analysis panna mudiyum",
+      "satquery என்ன செய்ய முடியும்",
+      "what can you do எனக்கு",
+      "நீ என்ன tasks panna mudiyum",
+      "satquery என்னென்ன analysis செய்யும்",
+      "what features இருக்கு"
+    ]
+  },
+
+  "general_question": {
+    "en": [
+      "what is satellite imagery",
+      "what are satellite images",
+      "what is remote sensing",
+      "what are satellite sensors",
+      "what is a satellite image",
+      "tell me about satellite imagery",
+      "tell me about remote sensing",
+      "what can satellite imagery be used for",
+      "what are remote sensing images",
+      "what are earth observation images"
+    ],
+    "ta": [
+      "செயற்கைக்கோள் படம் என்றால் என்ன",
+      "தொலை உணர்தல் என்றால் என்ன",
+      "செயற்கைக்கோள் படங்கள் என்றால் என்ன",
+      "தொலை உணர்தல் படங்கள் என்றால் என்ன",
+      "செயற்கைக்கோள் சென்சார்கள் என்றால் என்ன"
+    ],
+    "ta_latn": [
+      "satellite imagery na enna",
+      "remote sensing na enna",
+      "satellite image na enna",
+      "satellite images pathi sollu",
+      "remote sensing pathi sollu",
+      "satellite sensors na enna",
+      "earth observation na enna"
+    ],
+    "mixed": [
+      "satellite imagery என்றால் என்ன",
+      "remote sensing na enna",
+      "satellite image பற்றி சொல்லு",
+      "செயற்கைக்கோள் image na enna",
+      "remote sensing என்ன",
+      "satellite sensors என்றால் என்ன"
+    ]
+  },
+
+  "definition": {
+    "en": [
+      "what is SAR",
+      "what is multispectral imagery",
+      "what is hyperspectral imagery",
+      "what is synthetic aperture radar",
+      "what is NDVI",
+      "what is a GeoTIFF",
+      "define SAR",
+      "define remote sensing",
+      "what does SAR mean",
+      "what does NDVI mean"
+    ],
+    "ta": [
+      "SAR என்றால் என்ன",
+      "NDVI என்றால் என்ன",
+      "GeoTIFF என்றால் என்ன",
+      "மல்டிஸ்பெக்ட்ரல் படம் என்றால் என்ன",
+      "செயற்கை துளை ரேடார் என்றால் என்ன"
+    ],
+    "ta_latn": [
+      "SAR na enna",
+      "NDVI na enna",
+      "GeoTIFF na enna",
+      "multispectral imagery na enna",
+      "synthetic aperture radar na enna",
+      "SAR oda meaning enna"
+    ],
+    "mixed": [
+      "SAR என்றால் என்ன",
+      "NDVI na enna",
+      "GeoTIFF என்றால் என்ன",
+      "multispectral image na enna",
+      "SAR என்ன meaning"
+    ]
+  },
+
+  "explanation": {
+    "en": [
+      "how does satellite imaging work",
+      "how does SAR work",
+      "how does remote sensing work",
+      "explain how satellite imagery is captured",
+      "explain the satellite imaging process",
+      "explain remote sensing",
+      "explain how satellites capture images",
+      "how are satellite images generated",
+      "why is SAR useful",
+      "why do satellites use different sensors",
+      "explain how SAR detects objects",
+      "explain how NDVI works",
+      "how are satellite observations collected",
+      "explain the process of earth observation",
+      "how does a satellite sensor collect data"
+    ],
+    "ta": [
+      "செயற்கைக்கோள் படம் எப்படி எடுக்கப்படுகிறது",
+      "SAR எப்படி வேலை செய்கிறது",
+      "தொலை உணர்தல் எப்படி வேலை செய்கிறது",
+      "செயற்கைக்கோள் படங்கள் எப்படி உருவாகின்றன",
+      "செயற்கைக்கோள் சென்சார் எப்படி தரவை சேகரிக்கிறது",
+      "SAR எப்படி பொருட்களை கண்டறிகிறது"
+    ],
+    "ta_latn": [
+      "satellite imaging epdi work aagudhu",
+      "SAR epdi work aagudhu",
+      "remote sensing epdi work aagudhu",
+      "satellite images epdi capture pannuranga",
+      "satellite image epdi generate aagudhu",
+      "SAR epdi objects detect pannudhu",
+      "NDVI epdi work aagudhu",
+      "satellite sensor epdi data collect pannudhu",
+      "remote sensing process ah explain pannu"
+    ],
+    "mixed": [
+      "satellite imaging எப்படி work ஆகுது",
+      "SAR எப்படி work ஆகுது",
+      "remote sensing எப்படி வேலை செய்கிறது",
+      "satellite images எப்படி capture பண்ணுறாங்க",
+      "SAR epdi work ஆகுது",
+      "satellite sensor எப்படி data collect பண்ணுது",
+      "NDVI epdi work aagudhu"
+    ]
+  },
+
+  "object_detection": {
+    "en": [
+      "detect buildings in this image",
+      "find buildings in this image",
+      "detect roads",
+      "identify buildings",
+      "detect vehicles",
+      "find ships in the image",
+      "detect water bodies",
+      "identify roads in the satellite image",
+      "detect objects in this image",
+      "find all buildings",
+      "detect vehicles in the satellite image",
+      "identify ships in this image"
+    ],
+    "ta": [
+      "இந்த படத்தில் கட்டிடங்களை கண்டறி",
+      "கட்டிடங்களை கண்டுபிடி",
+      "சாலைகளை கண்டறி",
+      "வாகனங்களை கண்டறி",
+      "இந்த படத்தில் கப்பல்களை கண்டறி",
+      "நீர்நிலைகளை கண்டறி"
+    ],
+    "ta_latn": [
+      "indha image la buildings detect pannu",
+      "buildings ah kandupidi",
+      "roads ah detect pannu",
+      "vehicles ah detect pannu",
+      "indha image la ships detect pannu",
+      "water bodies ah identify pannu",
+      "satellite image la buildings find pannu",
+      "objects detect pannu"
+    ],
+    "mixed": [
+      "இந்த image la buildings detect pannu",
+      "கட்டிடங்களை detect பண்ணு",
+      "இந்த satellite image la roads identify pannu",
+      "vehicles ah கண்டறி",
+      "இந்த image la ships detect pannu",
+      "water bodies கண்டுபிடி"
+    ]
+  },
+
+  "object_counting": {
+    "en": [
+      "how many buildings are there",
+      "count the buildings",
+      "how many vehicles are in this image",
+      "count the roads",
+      "how many ships are visible",
+      "count all buildings",
+      "what is the number of buildings",
+      "how many vehicles can you find",
+      "count the objects",
+      "how many buildings can you see"
+    ],
+    "ta": [
+      "எத்தனை கட்டிடங்கள் உள்ளன",
+      "கட்டிடங்களை எண்ணு",
+      "எத்தனை வாகனங்கள் உள்ளன",
+      "எத்தனை கப்பல்கள் உள்ளன",
+      "கட்டிடங்களின் எண்ணிக்கை என்ன",
+      "இந்த படத்தில் எத்தனை கட்டிடங்கள் உள்ளன"
+    ],
+    "ta_latn": [
+      "ethana buildings irukku",
+      "buildings ah count pannu",
+      "ethana vehicles irukku",
+      "ethana ships irukku",
+      "buildings oda count enna",
+      "indha image la ethana buildings irukku",
+      "evlo buildings irukku",
+      "vehicles ethana irukku"
+    ],
+    "mixed": [
+      "இந்த image la ethana buildings irukku",
+      "ethana buildings இந்த image la irukku",
+      "கட்டிடங்கள் ethana irukku",
+      "இந்த படத்தில் எத்தனை vehicles இருக்கு",
+      "vehicles ethana count pannu",
+      "ethana ships இந்த image la irukku"
+    ]
+  },
+
+  "change_detection": {
+    "en": [
+      "what changed between these images",
+      "detect changes between these two images",
+      "has this area changed over time",
+      "identify temporal changes",
+      "detect land cover changes",
+      "find changes between the observations",
+      "what has changed over time",
+      "identify newly constructed buildings",
+      "identify removed buildings",
+      "detect newly constructed roads",
+      "find buildings that disappeared",
+      "detect vegetation changes",
+      "detect changes in this area over time",
+      "what is different between these observations",
+      "identify changes between before and after images"
+    ],
+    "ta": [
+      "இந்த இரண்டு படங்களுக்கு இடையில் என்ன மாற்றம் ஏற்பட்டுள்ளது",
+      "காலப்போக்கில் இந்த பகுதி மாறியுள்ளதா",
+      "மாற்றங்களை கண்டறி",
+      "நில பயன்பாட்டில் ஏற்பட்ட மாற்றங்களை கண்டறி",
+      "புதிய கட்டிடங்களை கண்டறி",
+      "அகற்றப்பட்ட கட்டிடங்களை கண்டறி",
+      "சாலைகளில் ஏற்பட்ட மாற்றங்களை கண்டறி",
+      "தாவரங்களில் ஏற்பட்ட மாற்றங்களை கண்டறி"
+    ],
+    "ta_latn": [
+      "indha rendu images ku naduvula enna change aachu",
+      "indha area time kooda change aachaa",
+      "changes ah detect pannu",
+      "land cover changes ah kandupidi",
+      "pudhusa construct panna buildings ah kandupidi",
+      "remove aana buildings ah identify pannu",
+      "roads la enna change aachu",
+      "vegetation la enna change aachu",
+      "before after images la enna difference",
+      "time over enna changes nadandhudhu"
+    ],
+    "mixed": [
+      "இந்த இரண்டு images la என்ன change ஆச்சு",
+      "இந்த area time over change ஆச்சா",
+      "land cover ல என்ன changes இருக்கு",
+      "புதிய buildings identify பண்ணு",
+      "removed buildings detect பண்ணு",
+      "இந்த இரண்டு observations ல என்ன change",
+      "before and after images ல என்ன difference",
+      "இந்த area la vegetation changes கண்டறி"
+    ]
+  },
+
+  "image_understanding": {
+    "en": [
+      "what is shown in this image",
+      "what can you see in this image",
+      "what is visible in this image",
+      "describe this image",
+      "what does this image contain",
+      "what objects are visible here",
+      "tell me what is in this image",
+      "identify the contents of this image",
+      "what is present in this satellite image",
+      "describe what you see in this satellite image",
+      "what can you identify in this image",
+      "tell me about this image",
+      "what does this satellite image show",
+      "give me an overview of this image",
+      "describe the scene in this image"
+    ],
+    "ta": [
+      "இந்த படத்தில் என்ன இருக்கிறது",
+      "இந்த படத்தில் என்ன தெரிகிறது",
+      "இந்த படம் எதை காட்டுகிறது",
+      "இந்த படத்தை விவரி",
+      "இந்த செயற்கைக்கோள் படத்தில் என்ன இருக்கிறது",
+      "இந்த படத்தில் என்ன பொருட்கள் உள்ளன",
+      "இந்த படத்தை பற்றி சொல்லு",
+      "இந்த காட்சியை விவரி"
+    ],
+    "ta_latn": [
+      "indha image la enna irukku",
+      "indha image la enna theriyudhu",
+      "indha image enna kaamikudhu",
+      "indha image ah describe pannu",
+      "indha image la enna objects irukku",
+      "indha satellite image la enna irukku",
+      "indha image pathi sollu",
+      "indha scene la enna irukku",
+      "indha image la enna visible ah irukku",
+      "indha padathula enna irukku",
+      "indha image enna contain pannudhu"
+    ],
+    "mixed": [
+      "இந்த image la enna irukku",
+      "இந்த image ல என்ன தெரிகிறது",
+      "இந்த satellite image என்ன காட்டுகிறது",
+      "இந்த image ah describe பண்ணு",
+      "இந்த image ல என்ன objects இருக்கு",
+      "இந்த படத்தில் என்ன visible ah இருக்கு",
+      "indha image la enna irukku",
+      "இந்த scene பற்றி சொல்லு",
+      "இந்த image என்ன contain பண்ணுது"
+    ]
+  },
+
+  "segmentation": {
+    "en": [
+      "segment the buildings",
+      "create a segmentation mask for buildings",
+      "segment roads in this image",
+      "generate a mask for water bodies",
+      "perform semantic segmentation",
+      "segment the land cover",
+      "identify pixels belonging to buildings",
+      "create a building mask",
+      "segment vegetation",
+      "separate different land cover regions",
+      "generate a segmentation map",
+      "create masks for roads",
+      "segment the water regions",
+      "perform pixel level segmentation",
+      "segment buildings from the background"
+    ],
+    "ta": [
+      "கட்டிடங்களை பிரித்து காட்டவும்",
+      "கட்டிடங்களுக்கான segmentation mask உருவாக்கு",
+      "சாலைகளை segment செய்",
+      "நீர்நிலைகளுக்கான mask உருவாக்கு",
+      "நில பயன்பாட்டை segment செய்",
+      "கட்டிடங்களின் pixels ஐ பிரித்து காட்டு",
+      "தாவரங்களை segment செய்",
+      "சாலை mask உருவாக்கு"
+    ],
+    "ta_latn": [
+      "buildings ah segment pannu",
+      "buildings ku segmentation mask create pannu",
+      "roads ah segment pannu",
+      "water bodies ku mask generate pannu",
+      "land cover ah segment pannu",
+      "buildings oda pixels ah separate pannu",
+      "vegetation ah segment pannu",
+      "road mask create pannu",
+      "pixel level segmentation pannu",
+      "background la irundhu buildings ah segment pannu"
+    ],
+    "mixed": [
+      "இந்த image ல buildings ah segment பண்ணு",
+      "buildings க்கு segmentation mask create பண்ணு",
+      "roads ah segment பண்ணு",
+      "water bodies க்கு mask உருவாக்கு",
+      "land cover ஐ segment பண்ணு",
+      "buildings pixels ஐ separate பண்ணு",
+      "vegetation ah segment பண்ணு",
+      "இந்த image ல road mask create பண்ணு"
+    ]
+  },
+
+  "localization": {
+    "en": [
+      "locate the road",
+      "where are the buildings",
+      "find the location of the vehicles",
+      "locate the ships",
+      "where is the river",
+      "locate the water body",
+      "find where the buildings are",
+      "identify the position of the road",
+      "where are the vehicles located",
+      "locate the objects in this image"
+    ],
+    "ta": [
+      "சாலை எங்கே உள்ளது",
+      "கட்டிடங்கள் எங்கே உள்ளன",
+      "வாகனங்கள் இருக்கும் இடத்தை கண்டறி",
+      "ஆறு எங்கே உள்ளது",
+      "நீர்நிலை எங்கே உள்ளது",
+      "கட்டிடங்களின் இருப்பிடத்தை கண்டறி"
+    ],
+    "ta_latn": [
+      "road enga irukku",
+      "buildings enga irukku",
+      "vehicles oda location kandupidi",
+      "ships enga irukku",
+      "river enga irukku",
+      "water body enga irukku",
+      "buildings oda position enna",
+      "road oda location kandupidi"
+    ],
+    "mixed": [
+      "road எங்கே இருக்கு",
+      "buildings enga irukku",
+      "vehicles oda location கண்டுபிடி",
+      "river எங்கே உள்ளது",
+      "இந்த image ல buildings எங்கே இருக்கு",
+      "water body oda location kandupidi"
+    ]
+  },
+
+  "comparison": {
+    "en": [
+      "compare these two images",
+      "compare these satellite images",
+      "compare these observations",
+      "compare the two images",
+      "which image has more buildings",
+      "compare the satellite observations",
+      "compare image one and image two",
+      "how are these two images different",
+      "compare these images with each other",
+      "compare the contents of these images"
+    ],
+    "ta": [
+      "இந்த இரண்டு படங்களை ஒப்பிடு",
+      "இந்த செயற்கைக்கோள் படங்களை ஒப்பிடு",
+      "இரண்டு படங்களையும் ஒப்பிடு",
+      "இந்த இரண்டு படங்கள் எப்படி வேறுபடுகின்றன",
+      "எந்த படத்தில் அதிக கட்டிடங்கள் உள்ளன",
+      "இந்த அவதானிப்புகளை ஒப்பிடு"
+    ],
+    "ta_latn": [
+      "indha rendu images ah compare pannu",
+      "indha satellite images ah compare pannu",
+      "rendu images um compare pannu",
+      "indha rendu images epdi different",
+      "endha image la adhiga buildings irukku",
+      "observations ah compare pannu",
+      "image one and image two compare pannu"
+    ],
+    "mixed": [
+      "இந்த இரண்டு images ah compare பண்ணு",
+      "இந்த satellite images ஐ compare பண்ணு",
+      "rendu images ah compare பண்ணு",
+      "இந்த இரண்டு images எப்படி different",
+      "எந்த image ல அதிக buildings இருக்கு",
+      "observations ஐ compare பண்ணு"
+    ]
+  }
+}
