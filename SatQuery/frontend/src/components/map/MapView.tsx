@@ -1,34 +1,22 @@
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useEffect, useRef, useState } from "react";
 
 import * as maplibregl from "maplibre-gl";
-import type { GeoJSONSourceSpecification } from "maplibre-gl";
+import type { Map as MapLibreMap } from "maplibre-gl";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 
-import {
-  BUILDINGS_GEOJSON,
-  CHANGE_AREA_GEOJSON,
-  FLOOD_AREA_GEOJSON,
-  ROADS_GEOJSON,
-} from "../data/demoData";
+import type { GeoJSONSourceSpecification } from "maplibre-gl";
 
 import type { Dataset } from "../../types/dataset";
+
+import {
+  CHANGE_AREA_GEOJSON,
+  FLOOD_AREA_GEOJSON,
+} from "../data/demoData";
 
 interface MapViewProps {
   dataset: Dataset;
   demoMode?: boolean;
-}
-
-interface MapBounds {
-  min_x: number;
-  min_y: number;
-  max_x: number;
-  max_y: number;
 }
 
 interface LayerVisibility {
@@ -39,250 +27,121 @@ interface LayerVisibility {
   roads: boolean;
 }
 
-const isValidBounds = (
-  value?: MapBounds | null
-): value is MapBounds => {
-  if (!value) return false;
-
-  return [
-    value.min_x,
-    value.min_y,
-    value.max_x,
-    value.max_y,
-  ].every(Number.isFinite);
-};
-
-const createDatasetGeoJSON = (
-  datasetBounds: MapBounds
-) => ({
-  type: "FeatureCollection",
-
-  features: [
-    {
-      type: "Feature",
-
-      properties: {
-        name: "Dataset Geographic Extent",
-      },
-
-      geometry: {
-        type: "Polygon",
-
-        coordinates: [
-          [
-            [
-              datasetBounds.min_x,
-              datasetBounds.min_y,
-            ],
-            [
-              datasetBounds.max_x,
-              datasetBounds.min_y,
-            ],
-            [
-              datasetBounds.max_x,
-              datasetBounds.max_y,
-            ],
-            [
-              datasetBounds.min_x,
-              datasetBounds.max_y,
-            ],
-            [
-              datasetBounds.min_x,
-              datasetBounds.min_y,
-            ],
-          ],
-        ],
-      },
-    },
-  ],
-});
+interface MapBounds {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+}
 
 const MapView = ({
   dataset,
   demoMode = false,
 }: MapViewProps) => {
-  const mapContainerRef =
-    useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
 
-  const mapRef =
-    useRef<maplibregl.Map | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  const [mapLoaded, setMapLoaded] =
-    useState(false);
-
-  const [layers, setLayers] =
+  const [layerVisibility, setLayerVisibility] =
     useState<LayerVisibility>({
       dataset: true,
-      change: true,
-      flood: false,
+      change: demoMode,
+      flood: demoMode,
       buildings: true,
       roads: true,
     });
 
   /*
-   * ============================================================
-   * DATASET → OBSERVATION → SPATIAL
-   * ============================================================
+   * Backend API URL
    *
-   * Phase 1 currently displays the first observation.
+   * .env:
+   * VITE_API_BASE_URL=http://localhost:8000
+   *
+   * If .env is not available, localhost:8000 is used.
    */
-  const observation = dataset.observations[0];
+  const apiBaseUrl =
+    import.meta.env.VITE_API_BASE_URL ||
+    "http://localhost:8000";
+
+  /*
+   * ---------------------------------------------------------
+   * DATASET OBSERVATION
+   * ---------------------------------------------------------
+   */
+
+  const observation = dataset?.observations?.[0];
 
   const spatial = observation?.spatial;
 
   /*
-   * ============================================================
-   * BACKEND BOUNDS → MAP BOUNDS
-   * ============================================================
-   *
-   * Backend:
-   *
-   * west
-   * south
-   * east
-   * north
-   *
-   * Existing MapLibre logic:
-   *
-   * min_x
-   * min_y
-   * max_x
-   * max_y
-   *
-   * useMemo is important here.
-   *
-   * Without it, a new object would be created on every
-   * React render, causing the MapLibre useEffect to run
-   * repeatedly and recreate the map.
+   * Dataset WGS84 bounds
    */
-  const bounds = useMemo<MapBounds | null>(() => {
-    if (!spatial?.wgs84_bounds) {
-      return null;
-    }
 
-    return {
-      min_x: spatial.wgs84_bounds.west,
-      min_y: spatial.wgs84_bounds.south,
-      max_x: spatial.wgs84_bounds.east,
-      max_y: spatial.wgs84_bounds.north,
-    };
-  }, [
-    spatial?.wgs84_bounds?.west,
-    spatial?.wgs84_bounds?.south,
-    spatial?.wgs84_bounds?.east,
-    spatial?.wgs84_bounds?.north,
-  ]);
+  const datasetBounds: MapBounds | null =
+    spatial?.wgs84_bounds
+      ? {
+          west: spatial.wgs84_bounds.west,
+          south: spatial.wgs84_bounds.south,
+          east: spatial.wgs84_bounds.east,
+          north: spatial.wgs84_bounds.north,
+        }
+      : null;
 
   /*
-   * ============================================================
-   * FIT DATASET
-   * ============================================================
+   * ---------------------------------------------------------
+   * FIT MAP TO DATASET
+   * ---------------------------------------------------------
    */
+
   const fitDataset = () => {
     const map = mapRef.current;
 
-    if (!map || !isValidBounds(bounds)) {
+    if (!map || !datasetBounds) {
       return;
     }
 
     map.fitBounds(
       [
-        [bounds.min_x, bounds.min_y],
-        [bounds.max_x, bounds.max_y],
+        [datasetBounds.west, datasetBounds.south],
+        [datasetBounds.east, datasetBounds.north],
       ],
       {
-        padding: 55,
-        duration: 900,
+        padding: 60,
+        duration: 1000,
+        maxZoom: 16,
       }
     );
   };
 
   /*
-   * ============================================================
-   * MAP LAYER VISIBILITY
-   * ============================================================
+   * ---------------------------------------------------------
+   * INITIALIZE MAP
+   * ---------------------------------------------------------
    */
-  const setMapLayerVisibility = (
-    layerIds: string[],
-    visible: boolean
-  ) => {
-    const map = mapRef.current;
 
-    if (!map || !mapLoaded) {
-      return;
-    }
-
-    layerIds.forEach((layerId) => {
-      if (map.getLayer(layerId)) {
-        map.setLayoutProperty(
-          layerId,
-          "visibility",
-          visible ? "visible" : "none"
-        );
-      }
-    });
-  };
-
-  const toggleLayer = (
-    layerName: keyof LayerVisibility
-  ) => {
-    const nextValue = !layers[layerName];
-
-    setLayers((currentLayers) => ({
-      ...currentLayers,
-      [layerName]: nextValue,
-    }));
-
-    const layerIds: Record<
-      keyof LayerVisibility,
-      string[]
-    > = {
-      dataset: [
-        "dataset-fill",
-        "dataset-outline",
-      ],
-
-      change: ["change-area"],
-
-      flood: ["flood-area"],
-
-      buildings: ["building-points"],
-
-      roads: ["road-line"],
-    };
-
-    setMapLayerVisibility(
-      layerIds[layerName],
-      nextValue
-    );
-  };
-
-  /*
-   * ============================================================
-   * CREATE MAP
-   * ============================================================
-   */
   useEffect(() => {
-    if (
-      !mapContainerRef.current ||
-      !spatial?.map_ready ||
-      !isValidBounds(bounds)
-    ) {
+    if (!mapContainerRef.current) {
       return;
     }
 
-    const centerLongitude =
-      (bounds.min_x + bounds.max_x) / 2;
+    /*
+     * Prevent duplicate map initialization
+     */
 
-    const centerLatitude =
-      (bounds.min_y + bounds.max_y) / 2;
+    if (mapRef.current) {
+      return;
+    }
+
+    /*
+     * -------------------------------------------------------
+     * SATELLITE BASEMAP
+     * -------------------------------------------------------
+     */
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
 
-      /*
-       * Sentinel-2 satellite raster basemap
-       */
       style: {
         version: 8,
 
@@ -291,439 +150,938 @@ const MapView = ({
             type: "raster",
 
             tiles: [
-              "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg",
+              "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-3857/default/g/{z}/{y}/{x}.jpg",
             ],
 
             tileSize: 256,
-
             attribution:
-              "Sentinel-2 cloudless imagery by EOX",
+              "© EOX IT Services GmbH",
           },
         },
 
         layers: [
           {
-            id: "satellite-basemap",
+            id: "satellite-layer",
+
             type: "raster",
+
             source: "satellite",
 
-            paint: {
-              "raster-opacity": 1,
-              "raster-saturation": 0.1,
-              "raster-contrast": 0.08,
-            },
+            minzoom: 0,
+            maxzoom: 19,
           },
         ],
       },
 
-      center: [
-        centerLongitude,
-        centerLatitude,
-      ],
+      center: datasetBounds
+        ? [
+            (datasetBounds.west +
+              datasetBounds.east) /
+              2,
+            (datasetBounds.south +
+              datasetBounds.north) /
+              2,
+          ]
+        : [80.22, 13.07],
 
-      zoom: 10,
+      zoom: datasetBounds ? 12 : 5,
     });
 
     mapRef.current = map;
 
     /*
-     * ==========================================================
-     * NAVIGATION CONTROLS
-     * ==========================================================
+     * Navigation controls
      */
+
     map.addControl(
-      new maplibregl.NavigationControl({
-        showCompass: true,
-        showZoom: true,
-      }),
+      new maplibregl.NavigationControl(),
       "top-right"
     );
 
     /*
-     * ==========================================================
-     * SCALE CONTROL
-     * ==========================================================
+     * Scale control
      */
+
     map.addControl(
       new maplibregl.ScaleControl({
-        maxWidth: 120,
+        maxWidth: 150,
         unit: "metric",
       }),
       "bottom-left"
     );
 
     /*
-     * ==========================================================
+     * -------------------------------------------------------
      * MAP LOAD
-     * ==========================================================
+     * -------------------------------------------------------
      */
+
     map.on("load", () => {
       /*
-       * --------------------------------------------------------
-       * Dataset geographic extent
-       * --------------------------------------------------------
+       * =====================================================
+       * DATASET EXTENT
+       * =====================================================
        */
-      const datasetGeoJSON =
-        createDatasetGeoJSON(bounds);
 
-      map.addSource("dataset-source", {
-        type: "geojson",
+      if (datasetBounds) {
+        const datasetGeoJson: GeoJSONSourceSpecification =
+          {
+            type: "geojson",
 
-        data:
-          datasetGeoJSON as GeoJSONSourceSpecification["data"],
-      });
+            data: {
+              type: "Feature",
 
-      map.addLayer({
-        id: "dataset-fill",
-        type: "fill",
-        source: "dataset-source",
+              properties: {},
 
-        layout: {
-          visibility: "visible",
-        },
+              geometry: {
+                type: "Polygon",
 
-        paint: {
-          "fill-color": "#38bdf8",
-          "fill-opacity": 0.14,
-        },
-      });
+                coordinates: [
+                  [
+                    [
+                      datasetBounds.west,
+                      datasetBounds.south,
+                    ],
 
-      map.addLayer({
-        id: "dataset-outline",
-        type: "line",
-        source: "dataset-source",
+                    [
+                      datasetBounds.east,
+                      datasetBounds.south,
+                    ],
 
-        layout: {
-          visibility: "visible",
-        },
+                    [
+                      datasetBounds.east,
+                      datasetBounds.north,
+                    ],
 
-        paint: {
-          "line-color": "#38bdf8",
-          "line-width": 3,
-          "line-dasharray": [2, 2],
-        },
-      });
+                    [
+                      datasetBounds.west,
+                      datasetBounds.north,
+                    ],
+
+                    [
+                      datasetBounds.west,
+                      datasetBounds.south,
+                    ],
+                  ],
+                ],
+              },
+            },
+          };
+
+        map.addSource(
+          "dataset-extent-source",
+          datasetGeoJson
+        );
+
+        /*
+         * Dataset fill
+         */
+
+        map.addLayer({
+          id: "dataset-extent-fill",
+
+          type: "fill",
+
+          source: "dataset-extent-source",
+
+          paint: {
+            "fill-color": "#3b82f6",
+
+            "fill-opacity": 0.08,
+          },
+        });
+
+        /*
+         * Dataset border
+         */
+
+        map.addLayer({
+          id: "dataset-extent-outline",
+
+          type: "line",
+
+          source: "dataset-extent-source",
+
+          paint: {
+            "line-color": "#2563eb",
+
+            "line-width": 2,
+
+            "line-opacity": 0.9,
+          },
+        });
+      }
 
       /*
-       * --------------------------------------------------------
-       * Demo change-detection layer
-       * --------------------------------------------------------
+       * =====================================================
+       * ROADS VECTOR TILE API
+       * =====================================================
+       *
+       * Backend:
+       *
+       * /api/v1/tiles/roads/{z}/{x}/{y}.pbf
+       *
        */
-      map.addSource("change-source", {
-        type: "geojson",
 
-        data:
-          CHANGE_AREA_GEOJSON as GeoJSONSourceSpecification["data"],
-      });
-
-      map.addLayer({
-        id: "change-area",
-        type: "fill",
-        source: "change-source",
-
-        layout: {
-          visibility: "visible",
-        },
-
-        paint: {
-          "fill-color": "#f97316",
-          "fill-opacity": 0.35,
-          "fill-outline-color": "#fb923c",
-        },
-      });
-
-      /*
-       * --------------------------------------------------------
-       * Demo flood layer
-       * --------------------------------------------------------
-       */
-      map.addSource("flood-source", {
-        type: "geojson",
-
-        data:
-          FLOOD_AREA_GEOJSON as GeoJSONSourceSpecification["data"],
-      });
-
-      map.addLayer({
-        id: "flood-area",
-        type: "fill",
-        source: "flood-source",
-
-        layout: {
-          visibility: "none",
-        },
-
-        paint: {
-          "fill-color": "#2563eb",
-          "fill-opacity": 0.45,
-          "fill-outline-color": "#60a5fa",
-        },
-      });
-
-      /*
-       * --------------------------------------------------------
-       * Demo buildings layer
-       * --------------------------------------------------------
-       */
-      map.addSource("building-source", {
-        type: "geojson",
-
-        data:
-          BUILDINGS_GEOJSON as GeoJSONSourceSpecification["data"],
-      });
-
-      map.addLayer({
-        id: "building-points",
-        type: "circle",
-        source: "building-source",
-
-        layout: {
-          visibility: "visible",
-        },
-
-        paint: {
-          "circle-radius": 7,
-          "circle-color": "#22c55e",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 2,
-        },
-      });
-
-      /*
-       * --------------------------------------------------------
-       * Demo road layer
-       * --------------------------------------------------------
-       */
       map.addSource("road-source", {
-        type: "geojson",
+        type: "vector",
 
-        data:
-          ROADS_GEOJSON as GeoJSONSourceSpecification["data"],
+        tiles: [
+          `${apiBaseUrl}/api/v1/tiles/roads/{z}/{x}/{y}.pbf`,
+        ],
+
+        minzoom: 10,
+
+        maxzoom: 18,
       });
+
+      /*
+       * Road layer
+       */
 
       map.addLayer({
         id: "road-line",
+
         type: "line",
+
         source: "road-source",
 
+        /*
+         * Backend generator is expected to use
+         * "roads" as source-layer.
+         */
+
+        "source-layer": "roads",
+
         layout: {
-          visibility: "visible",
+          visibility: layerVisibility.roads
+            ? "visible"
+            : "none",
         },
 
         paint: {
           "line-color": "#facc15",
-          "line-width": 4,
+
+          "line-width": [
+            "interpolate",
+            ["linear"],
+            ["zoom"],
+
+            10,
+            1,
+
+            13,
+            1.5,
+
+            15,
+            3,
+
+            18,
+            5,
+          ],
+
+          "line-opacity": 0.9,
         },
       });
+
+      /*
+       * =====================================================
+       * BUILDINGS VECTOR TILE API
+       * =====================================================
+       *
+       * Backend:
+       *
+       * /api/v1/tiles/buildings/{z}/{x}/{y}.pbf
+       *
+       */
+
+      map.addSource("building-source", {
+        type: "vector",
+
+        tiles: [
+          `${apiBaseUrl}/api/v1/tiles/buildings/{z}/{x}/{y}.pbf`,
+        ],
+
+        minzoom: 10,
+
+        maxzoom: 18,
+      });
+
+      /*
+       * Building polygons
+       */
+
+      map.addLayer({
+        id: "building-fill",
+
+        type: "fill",
+
+        source: "building-source",
+
+        /*
+         * Backend generator is expected to use
+         * "buildings" as source-layer.
+         */
+
+        "source-layer": "buildings",
+
+        layout: {
+          visibility: layerVisibility.buildings
+            ? "visible"
+            : "none",
+        },
+
+        paint: {
+          "fill-color": "#22c55e",
+
+          "fill-opacity": 0.35,
+
+          "fill-outline-color": "#166534",
+        },
+      });
+
+      /*
+       * =====================================================
+       * CHANGE DEMO
+       * =====================================================
+       */
+
+      if (demoMode) {
+        map.addSource(
+          "change-source",
+          {
+            type: "geojson",
+
+            data: CHANGE_AREA_GEOJSON,
+          }
+        );
+
+        map.addLayer({
+          id: "change-fill",
+
+          type: "fill",
+
+          source: "change-source",
+
+          layout: {
+            visibility:
+              layerVisibility.change
+                ? "visible"
+                : "none",
+          },
+
+          paint: {
+            "fill-color": "#ef4444",
+
+            "fill-opacity": 0.45,
+
+            "fill-outline-color":
+              "#991b1b",
+          },
+        });
+      }
+
+      /*
+       * =====================================================
+       * FLOOD DEMO
+       * =====================================================
+       */
+
+      if (demoMode) {
+        map.addSource(
+          "flood-source",
+          {
+            type: "geojson",
+
+            data: FLOOD_AREA_GEOJSON,
+          }
+        );
+
+        map.addLayer({
+          id: "flood-fill",
+
+          type: "fill",
+
+          source: "flood-source",
+
+          layout: {
+            visibility:
+              layerVisibility.flood
+                ? "visible"
+                : "none",
+          },
+
+          paint: {
+            "fill-color": "#06b6d4",
+
+            "fill-opacity": 0.4,
+
+            "fill-outline-color":
+              "#0e7490",
+          },
+        });
+      }
+
+      /*
+       * =====================================================
+       * MAP READY
+       * =====================================================
+       */
 
       setMapLoaded(true);
 
       /*
-       * --------------------------------------------------------
-       * Automatically focus on dataset
-       * --------------------------------------------------------
+       * Fit map to dataset
        */
-      map.fitBounds(
-        [
-          [bounds.min_x, bounds.min_y],
-          [bounds.max_x, bounds.max_y],
-        ],
-        {
-          padding: 55,
-          duration: 0,
-        }
-      );
+
+      if (datasetBounds) {
+        map.fitBounds(
+          [
+            [
+              datasetBounds.west,
+              datasetBounds.south,
+            ],
+
+            [
+              datasetBounds.east,
+              datasetBounds.north,
+            ],
+          ],
+          {
+            padding: 60,
+
+            duration: 800,
+
+            maxZoom: 16,
+          }
+        );
+      }
     });
 
     /*
-     * ==========================================================
+     * -------------------------------------------------------
      * CLEANUP
-     * ==========================================================
+     * -------------------------------------------------------
      */
-    return () => {
-      setMapLoaded(false);
 
+    return () => {
       map.remove();
 
       mapRef.current = null;
+
+      setMapLoaded(false);
     };
-  }, [bounds, spatial?.map_ready]);
+
+    /*
+     * Map should initialize when dataset changes.
+     */
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataset.dataset_id]);
 
   /*
-   * ============================================================
-   * MAP UNAVAILABLE
-   * ============================================================
+   * ---------------------------------------------------------
+   * LAYER VISIBILITY
+   * ---------------------------------------------------------
    */
-  if (
-    !spatial?.map_ready ||
-    !isValidBounds(bounds)
-  ) {
-    return (
-      <section className="map-fallback">
-        <strong>Map unavailable</strong>
 
-        <p>
-          {spatial?.map_unavailable_reason ||
-            "Geographic location is unavailable for this dataset."}
-        </p>
-      </section>
-    );
-  }
+  useEffect(() => {
+    const map = mapRef.current;
+
+    if (!map || !mapLoaded) {
+      return;
+    }
+
+    /*
+     * Dataset
+     */
+
+    if (
+      map.getLayer("dataset-extent-fill")
+    ) {
+      map.setLayoutProperty(
+        "dataset-extent-fill",
+        "visibility",
+        layerVisibility.dataset
+          ? "visible"
+          : "none"
+      );
+    }
+
+    if (
+      map.getLayer("dataset-extent-outline")
+    ) {
+      map.setLayoutProperty(
+        "dataset-extent-outline",
+        "visibility",
+        layerVisibility.dataset
+          ? "visible"
+          : "none"
+      );
+    }
+
+    /*
+     * Roads
+     */
+
+    if (map.getLayer("road-line")) {
+      map.setLayoutProperty(
+        "road-line",
+        "visibility",
+        layerVisibility.roads
+          ? "visible"
+          : "none"
+      );
+    }
+
+    /*
+     * Buildings
+     */
+
+    if (map.getLayer("building-fill")) {
+      map.setLayoutProperty(
+        "building-fill",
+        "visibility",
+        layerVisibility.buildings
+          ? "visible"
+          : "none"
+      );
+    }
+
+    /*
+     * Change
+     */
+
+    if (map.getLayer("change-fill")) {
+      map.setLayoutProperty(
+        "change-fill",
+        "visibility",
+        layerVisibility.change
+          ? "visible"
+          : "none"
+      );
+    }
+
+    /*
+     * Flood
+     */
+
+    if (map.getLayer("flood-fill")) {
+      map.setLayoutProperty(
+        "flood-fill",
+        "visibility",
+        layerVisibility.flood
+          ? "visible"
+          : "none"
+      );
+    }
+  }, [
+    layerVisibility,
+    mapLoaded,
+  ]);
 
   /*
-   * ============================================================
-   * MAP UI
-   * ============================================================
+   * ---------------------------------------------------------
+   * TOGGLE LAYER
+   * ---------------------------------------------------------
    */
+
+  const toggleLayer = (
+    layer: keyof LayerVisibility
+  ) => {
+    setLayerVisibility((previous) => ({
+      ...previous,
+
+      [layer]: !previous[layer],
+    }));
+  };
+
+  /*
+   * ---------------------------------------------------------
+   * RENDER
+   * ---------------------------------------------------------
+   */
+
   return (
-    <section className="map-card">
-      <div className="map-card-header">
+    <div className="w-full space-y-3">
+      {/* =====================================================
+          MAP HEADER
+          ===================================================== */}
+
+      <div className="flex flex-col gap-3 rounded-lg border bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between">
         <div>
-          <div className="map-title-row">
-            <h3>Interactive Satellite Map</h3>
+          <h2 className="text-lg font-semibold">
+            Satellite Map
+          </h2>
 
-            {demoMode && (
-              <span className="demo-badge">
-                Demo Data
-              </span>
-            )}
-          </div>
-
-          <p>
-            Explore the satellite basemap, dataset extent
-            and visualization layers.
+          <p className="text-sm text-gray-500">
+            {dataset.name}
           </p>
         </div>
 
         <button
           type="button"
-          className="fit-dataset-btn"
           onClick={fitDataset}
-          disabled={!mapLoaded}
+          disabled={!datasetBounds}
+          className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           Fit Dataset
         </button>
       </div>
 
-      <div className="map-layout">
-        <div className="map-wrapper">
-          {!mapLoaded && (
-            <div className="map-loading">
-              Loading satellite map...
+      {/* =====================================================
+          LAYER CONTROLS
+          ===================================================== */}
+
+      <div className="flex flex-wrap gap-2 rounded-lg border bg-white p-3 shadow-sm">
+        {/* Dataset */}
+
+        <button
+          type="button"
+          onClick={() =>
+            toggleLayer("dataset")
+          }
+          className={`rounded-md border px-3 py-2 text-sm ${
+            layerVisibility.dataset
+              ? "bg-blue-50 text-blue-700"
+              : "bg-gray-50 text-gray-500"
+          }`}
+        >
+          {layerVisibility.dataset
+            ? "☑"
+            : "☐"}{" "}
+          Dataset
+        </button>
+
+        {/* Roads */}
+
+        <button
+          type="button"
+          onClick={() =>
+            toggleLayer("roads")
+          }
+          className={`rounded-md border px-3 py-2 text-sm ${
+            layerVisibility.roads
+              ? "bg-yellow-50 text-yellow-700"
+              : "bg-gray-50 text-gray-500"
+          }`}
+        >
+          {layerVisibility.roads
+            ? "☑"
+            : "☐"}{" "}
+          Roads
+        </button>
+
+        {/* Buildings */}
+
+        <button
+          type="button"
+          onClick={() =>
+            toggleLayer("buildings")
+          }
+          className={`rounded-md border px-3 py-2 text-sm ${
+            layerVisibility.buildings
+              ? "bg-green-50 text-green-700"
+              : "bg-gray-50 text-gray-500"
+          }`}
+        >
+          {layerVisibility.buildings
+            ? "☑"
+            : "☐"}{" "}
+          Buildings
+        </button>
+
+        {/* Change */}
+
+        {demoMode && (
+          <button
+            type="button"
+            onClick={() =>
+              toggleLayer("change")
+            }
+            className={`rounded-md border px-3 py-2 text-sm ${
+              layerVisibility.change
+                ? "bg-red-50 text-red-700"
+                : "bg-gray-50 text-gray-500"
+            }`}
+          >
+            {layerVisibility.change
+              ? "☑"
+              : "☐"}{" "}
+            Change
+          </button>
+        )}
+
+        {/* Flood */}
+
+        {demoMode && (
+          <button
+            type="button"
+            onClick={() =>
+              toggleLayer("flood")
+            }
+            className={`rounded-md border px-3 py-2 text-sm ${
+              layerVisibility.flood
+                ? "bg-cyan-50 text-cyan-700"
+                : "bg-gray-50 text-gray-500"
+            }`}
+          >
+            {layerVisibility.flood
+              ? "☑"
+              : "☐"}{" "}
+            Flood
+          </button>
+        )}
+      </div>
+
+      {/* =====================================================
+          MAP
+          ===================================================== */}
+
+      <div className="relative h-[600px] w-full overflow-hidden rounded-xl border shadow-sm">
+        <div
+          ref={mapContainerRef}
+          className="h-full w-full"
+        />
+
+        {/* Loading */}
+
+        {!mapLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-white/70">
+            <div className="rounded-lg bg-white px-4 py-3 text-sm shadow">
+              Loading map...
             </div>
-          )}
-
-          <div
-            ref={mapContainerRef}
-            className="map-view"
-          />
-        </div>
-
-        <aside className="layer-panel">
-          <h4>Map Layers</h4>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={layers.dataset}
-              onChange={() =>
-                toggleLayer("dataset")
-              }
-            />
-
-            <span className="layer-color dataset" />
-
-            Dataset extent
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={layers.change}
-              onChange={() =>
-                toggleLayer("change")
-              }
-            />
-
-            <span className="layer-color change" />
-
-            Change area
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={layers.flood}
-              onChange={() =>
-                toggleLayer("flood")
-              }
-            />
-
-            <span className="layer-color flood" />
-
-            Flood area
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={layers.buildings}
-              onChange={() =>
-                toggleLayer("buildings")
-              }
-            />
-
-            <span className="layer-color buildings" />
-
-            Buildings
-          </label>
-
-          <label>
-            <input
-              type="checkbox"
-              checked={layers.roads}
-              onChange={() =>
-                toggleLayer("roads")
-              }
-            />
-
-            <span className="layer-color roads" />
-
-            Roads
-          </label>
-        </aside>
+          </div>
+        )}
       </div>
 
-      <div className="map-metadata">
-        <div>
-          <span>CRS</span>
+      {/* =====================================================
+          DATASET INFORMATION
+          ===================================================== */}
 
-          <strong>
-            {spatial?.source_crs ||
-              spatial?.crs_status ||
-              "Unavailable"}
-          </strong>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        {/* Status */}
+
+        <div className="rounded-lg border bg-white p-4">
+          <p className="text-xs text-gray-500">
+            Processing Status
+          </p>
+
+          <p className="mt-1 font-medium capitalize">
+            {dataset.processing.status}
+          </p>
         </div>
 
-        <div>
-          <span>Minimum coordinates</span>
+        {/* Raster */}
 
-          <strong>
-            {bounds.min_x.toFixed(4)},{" "}
-            {bounds.min_y.toFixed(4)}
-          </strong>
+        <div className="rounded-lg border bg-white p-4">
+          <p className="text-xs text-gray-500">
+            Raster
+          </p>
+
+          <p className="mt-1 font-medium">
+            {observation?.raster?.width ?? "-"} ×{" "}
+            {observation?.raster?.height ?? "-"}
+          </p>
         </div>
 
-        <div>
-          <span>Maximum coordinates</span>
+        {/* Bands */}
 
-          <strong>
-            {bounds.max_x.toFixed(4)},{" "}
-            {bounds.max_y.toFixed(4)}
-          </strong>
+        <div className="rounded-lg border bg-white p-4">
+          <p className="text-xs text-gray-500">
+            Bands
+          </p>
+
+          <p className="mt-1 font-medium">
+            {observation?.raster?.band_count ??
+              "-"}
+          </p>
         </div>
       </div>
-    </section>
+
+      {/* =====================================================
+          SPATIAL INFORMATION
+          ===================================================== */}
+
+      {spatial && (
+        <div className="rounded-lg border bg-white p-4 shadow-sm">
+          <h3 className="mb-3 font-semibold">
+            Spatial Information
+          </h3>
+
+          <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <p className="text-xs text-gray-500">
+                Source CRS
+              </p>
+
+              <p className="font-medium">
+                {spatial.source_crs || "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                Map Ready
+              </p>
+
+              <p className="font-medium">
+                {spatial.map_ready
+                  ? "Yes"
+                  : "No"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                West
+              </p>
+
+              <p className="font-medium">
+                {spatial.wgs84_bounds?.west ??
+                  "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                East
+              </p>
+
+              <p className="font-medium">
+                {spatial.wgs84_bounds?.east ??
+                  "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                South
+              </p>
+
+              <p className="font-medium">
+                {spatial.wgs84_bounds?.south ??
+                  "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                North
+              </p>
+
+              <p className="font-medium">
+                {spatial.wgs84_bounds?.north ??
+                  "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                Resolution
+              </p>
+
+              <p className="font-medium">
+                {observation?.raster?.resolution
+                  ? `${observation.raster.resolution[0]} × ${observation.raster.resolution[1]}`
+                  : "-"}
+              </p>
+            </div>
+
+            <div>
+              <p className="text-xs text-gray-500">
+                Band Count
+              </p>
+
+              <p className="font-medium">
+                {observation?.raster
+                  ?.band_count ?? "-"}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================
+          BAND INFORMATION
+          ===================================================== */}
+
+      {observation?.raster?.bands &&
+        observation.raster.bands.length > 0 && (
+          <div className="rounded-lg border bg-white p-4 shadow-sm">
+            <h3 className="mb-3 font-semibold">
+              Raster Bands
+            </h3>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px] text-left text-sm">
+                <thead>
+                  <tr className="border-b">
+                    <th className="px-3 py-2">
+                      Index
+                    </th>
+
+                    <th className="px-3 py-2">
+                      Band
+                    </th>
+
+                    <th className="px-3 py-2">
+                      Data Type
+                    </th>
+
+                    <th className="px-3 py-2">
+                      Width
+                    </th>
+
+                    <th className="px-3 py-2">
+                      Height
+                    </th>
+
+                    <th className="px-3 py-2">
+                      NoData
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {observation.raster.bands.map(
+                    (band) => (
+                      <tr
+                        key={band.index}
+                        className="border-b last:border-b-0"
+                      >
+                        <td className="px-3 py-2">
+                          {band.index}
+                        </td>
+
+                        <td className="px-3 py-2 font-medium">
+                          {band.name}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          {band.dtype}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          {band.width}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          {band.height}
+                        </td>
+
+                        <td className="px-3 py-2">
+                          {band.nodata ?? "-"}
+                        </td>
+                      </tr>
+                    )
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+    </div>
   );
 };
 

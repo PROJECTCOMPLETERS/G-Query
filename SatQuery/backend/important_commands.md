@@ -5,7 +5,7 @@
 From the project root:
 
 ```powershell
-.\myenv\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 ```
 
 Verify:

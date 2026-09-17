@@ -50,6 +50,40 @@ const Home = () => {
     ]);
   };
 
+  
+  const waitForDatasetReady = async (
+  datasetId: string
+): Promise<Dataset> => {
+  const maxAttempts = 30;
+  const delay = 2000;
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const dataset = await getDataset(datasetId);
+
+    if (
+      dataset.processing.status === "ready"
+    ) {
+      return dataset;
+    }
+
+    if (
+      dataset.processing.status === "failed"
+    ) {
+      throw new Error(
+        "Dataset processing failed"
+      );
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, delay)
+    );
+  }
+
+  throw new Error(
+    "Dataset processing timed out"
+  );
+};
+
   const handleAnalyze = async (
     userQuery: string,
     file: File | null
@@ -150,9 +184,9 @@ const Home = () => {
          * This gives us the dataset including
          * the newly created observation.
          */
-        const dataset = await getDataset(
-          createdDataset.dataset_id
-        );
+        const dataset = await waitForDatasetReady(
+  createdDataset.dataset_id
+);
 
         /*
          * -----------------------------------------------
