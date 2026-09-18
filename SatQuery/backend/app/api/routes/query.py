@@ -47,7 +47,7 @@ def create_query(
         inputs=request.inputs,
         modality=request.modality,
     )
-
+    print(result)
     return QueryAcceptedResponse(
     request_id=request_id,
     status=result.status.value,
