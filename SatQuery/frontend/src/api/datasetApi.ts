@@ -10,13 +10,18 @@ import type {
 
 export const createDataset = async (
   name: string,
-  datasetType: DatasetType
+  datasetType: DatasetType,
+  signal?: AbortSignal
 ): Promise<CreateDatasetResponse> => {
   const response = await apiClient.post<CreateDatasetResponse>(
     "/api/v1/datasets",
     {
       name,
       dataset_type: datasetType,
+    },
+    {
+      signal,
+      timeout: 30000,
     }
   );
 
@@ -25,11 +30,14 @@ export const createDataset = async (
 
 export const getDatasets = async (
   page = 1,
-  pageSize = 20
+  pageSize = 20,
+  signal?: AbortSignal
 ): Promise<DatasetListResponse> => {
   const response = await apiClient.get<DatasetListResponse>(
     "/api/v1/datasets",
     {
+      signal,
+      timeout: 30000,
       params: {
         page,
         page_size: pageSize,
@@ -41,10 +49,15 @@ export const getDatasets = async (
 };
 
 export const getDataset = async (
-  datasetId: string
+  datasetId: string,
+  signal?: AbortSignal
 ): Promise<Dataset> => {
   const response = await apiClient.get<Dataset>(
-    `/api/v1/datasets/${datasetId}`
+    `/api/v1/datasets/${datasetId}`,
+    {
+      signal,
+      timeout: 30000,
+    }
   );
 
   return response.data;
@@ -53,24 +66,25 @@ export const getDataset = async (
 export const deleteDataset = async (
   datasetId: string
 ): Promise<void> => {
-  await apiClient.delete(
-    `/api/v1/datasets/${datasetId}`
-  );
+  await apiClient.delete(`/api/v1/datasets/${datasetId}`);
 };
 
 export const uploadDatasetFile = async (
   datasetId: string,
-  file: File
+  file: File,
+  signal?: AbortSignal
 ): Promise<UploadDatasetFileResponse> => {
   const formData = new FormData();
-
   formData.append("file", file);
 
-  const response =
-    await apiClient.post<UploadDatasetFileResponse>(
-      `/api/v1/datasets/${datasetId}/files`,
-      formData
-    );
+  const response = await apiClient.post<UploadDatasetFileResponse>(
+    `/api/v1/datasets/${datasetId}/files`,
+    formData,
+    {
+      signal,
+      timeout: 120000,
+    }
+  );
 
   return response.data;
 };

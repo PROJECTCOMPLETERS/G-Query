@@ -1,121 +1,155 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
 import FileUploader from "../upload/FileUploader";
 
 interface QueryInputProps {
+  query: string;
+
+  onQuery: (value: string) => void;
+
   onAnalyze: (
     query: string,
     file: File | null
   ) => Promise<void>;
+
   analyzing: boolean;
+
+  onStop: () => void;
+
+  clarification: boolean;
+
+  blocked: boolean;
 }
 
 const QueryInput = ({
+  query,
+  onQuery,
   onAnalyze,
   analyzing,
+  onStop,
+  clarification,
+  blocked,
 }: QueryInputProps) => {
-  const [query, setQuery] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [error, setError] = useState("");
+  const [file, setFile] =
+    useState<File | null>(null);
 
-  const handleAnalyze = async () => {
-    const cleanedQuery = query.trim();
+  const textareaRef =
+    useRef<HTMLTextAreaElement>(null);
 
-    if (!cleanedQuery && !file) {
-      setError(
-        "Enter a query or attach a satellite image."
-      );
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+
+    textarea.style.height = `${
+      Math.min(textarea.scrollHeight, 160)
+    }px`;
+  }, [query]);
+
+  const handleSend = () => {
+    if (
+      analyzing ||
+      blocked ||
+      (!query.trim() && !file)
+    ) {
       return;
     }
 
-    setError("");
+    const cleanedQuery = query.trim();
+    const selectedFile = file;
 
-    try {
-      await onAnalyze(cleanedQuery, file);
+    onQuery("");
+    setFile(null);
 
-      setQuery("");
-      setFile(null);
-    } catch {
-      setError(
-        "Failed to process your request. Please try again."
-      );
-    }
-  };
-
-  const handleKeyDown = (
-    event: React.KeyboardEvent<HTMLTextAreaElement>
-  ) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !analyzing
-    ) {
-      event.preventDefault();
-      void handleAnalyze();
-    }
+    void onAnalyze(cleanedQuery, selectedFile);
   };
 
   return (
     <div className="composer-wrapper">
-      <div className="composer">
-        {file && (
-          <FileUploader
-            file={file}
-            onFileSelect={setFile}
-          />
-        )}
+      {clarification && (
+        <p className="clarification-hint">
+          {blocked
+            ? "Clarification is waiting for the backend reply endpoint."
+            : "Your reply continues the same request."}
+        </p>
+      )}
 
+      <div className="composer">
         <textarea
+          ref={textareaRef}
           value={query}
           onChange={(event) => {
-            setQuery(event.target.value);
-            setError("");
+            onQuery(event.target.value);
           }}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask SatQuery about satellite imagery..."
+          onKeyDown={(event) => {
+            if (
+              event.key === "Enter" &&
+              !event.shiftKey &&
+              !event.nativeEvent.isComposing
+            ) {
+              event.preventDefault();
+              handleSend();
+            }
+          }}
+          placeholder={
+            clarification
+              ? "Answer the clarification…"
+              : "Ask SatQuery about satellite imagery…"
+          }
           rows={1}
-          disabled={analyzing}
-          aria-label="Enter a satellite imagery query"
+          disabled={blocked}
+          aria-label="Message SatQuery"
         />
 
         <div className="composer-actions">
-          {!file && (
+          <fieldset
+            className="upload-controls"
+            disabled={analyzing || blocked}
+          >
             <FileUploader
               file={file}
               onFileSelect={setFile}
             />
-          )}
+          </fieldset>
 
           <span className="input-hint">
-            JPG, PNG or GeoTIFF
+            Enter to send · Shift + Enter for newline
           </span>
 
-          <button
-            type="button"
-            className="send-btn"
-            onClick={() => void handleAnalyze()}
-            disabled={
-              analyzing ||
-              (!query.trim() && !file)
-            }
-            aria-label="Send query"
-          >
-            {analyzing ? "•••" : "➤"}
-          </button>
+          {analyzing ? (
+            <button
+              type="button"
+              className="send-btn"
+              onClick={onStop}
+              aria-label="Stop response"
+            >
+              ■
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="send-btn"
+              onClick={handleSend}
+              disabled={
+                blocked ||
+                (!query.trim() && !file)
+              }
+              aria-label="Send query"
+            >
+              ➤
+            </button>
+          )}
         </div>
       </div>
 
-      {error && (
-        <p
-          className="composer-error"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-
       <p className="composer-note">
-        SatQuery can make mistakes. Verify important
-        satellite observations.
+        Check results against the source observations.
       </p>
     </div>
   );

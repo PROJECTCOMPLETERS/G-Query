@@ -1,17 +1,16 @@
 import type { Dataset } from "../../types/dataset";
 
+// These values are synthetic demo data.
 export const DEMO_BOUNDS = {
-  min_x: 80.20,
-  min_y: 12.90,
+  min_x: 80.2,
+  min_y: 12.9,
   max_x: 80.35,
   max_y: 13.15,
 };
 
 export const DEMO_DATASET: Dataset = {
   dataset_id: "demo_chennai_001",
-
   name: "chennai_demo.tif",
-
   dataset_type: "single",
 
   processing: {
@@ -20,6 +19,8 @@ export const DEMO_DATASET: Dataset = {
 
   observations: [
     {
+      observation_id: "demo_obs_001",
+
       source: {
         kind: "file",
         locator: "demo/chennai_demo.tif",
@@ -59,9 +60,7 @@ export const DEMO_DATASET: Dataset = {
         ],
 
         map_ready: true,
-
         map_unavailable_reason: null,
-
         transform: null,
       },
 
@@ -120,7 +119,6 @@ export const DEMO_DATASET: Dataset = {
         ],
 
         nodata: null,
-
         resolution: [10, 10],
       },
 
@@ -133,12 +131,7 @@ export const DEMO_DATASET: Dataset = {
   ],
 };
 
-/*
- * ============================================================
- * DATASET EXTENT
- * ============================================================
- */
-
+// Dataset extent
 export const DATASET_EXTENT_GEOJSON = {
   type: "FeatureCollection",
 
@@ -168,12 +161,7 @@ export const DATASET_EXTENT_GEOJSON = {
   ],
 };
 
-/*
- * ============================================================
- * CHANGE AREA
- * ============================================================
- */
-
+// Demo change area
 export const CHANGE_AREA_GEOJSON = {
   type: "FeatureCollection",
 
@@ -203,12 +191,7 @@ export const CHANGE_AREA_GEOJSON = {
   ],
 };
 
-/*
- * ============================================================
- * FLOOD AREA
- * ============================================================
- */
-
+// Demo flood area
 export const FLOOD_AREA_GEOJSON = {
   type: "FeatureCollection",
 
@@ -238,12 +221,7 @@ export const FLOOD_AREA_GEOJSON = {
   ],
 };
 
-/*
- * ============================================================
- * BUILDINGS
- * ============================================================
- */
-
+// Demo buildings
 export const BUILDINGS_GEOJSON = {
   type: "FeatureCollection",
 
@@ -257,11 +235,9 @@ export const BUILDINGS_GEOJSON = {
 
       geometry: {
         type: "Point",
-
         coordinates: [80.255, 13.04],
       },
     },
-
     {
       type: "Feature",
 
@@ -271,11 +247,9 @@ export const BUILDINGS_GEOJSON = {
 
       geometry: {
         type: "Point",
-
         coordinates: [80.29, 13.075],
       },
     },
-
     {
       type: "Feature",
 
@@ -285,19 +259,13 @@ export const BUILDINGS_GEOJSON = {
 
       geometry: {
         type: "Point",
-
         coordinates: [80.32, 13.025],
       },
     },
   ],
 };
 
-/*
- * ============================================================
- * ROADS
- * ============================================================
- */
-
+// Demo roads
 export const ROADS_GEOJSON = {
   type: "FeatureCollection",
 

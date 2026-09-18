@@ -21,6 +21,7 @@ export interface Source {
 }
 
 export interface Acquisition {
+  datetime?: string | null;
   satellite?: string | null;
   sensor?: string | null;
   acquisition_date?: string | null;
@@ -79,6 +80,7 @@ export interface FileReference {
 }
 
 export interface Observation {
+  observation_id: string;
   source: Source;
   acquisition: Acquisition;
   spatial: Spatial;

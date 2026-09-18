@@ -1,0 +1,541 @@
+/* Chat additions; existing index.css styles are also used. */
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.navbar .logo {
+  background: transparent;
+  padding: 0;
+}
+
+.nav-links button {
+  background: none;
+  color: #cbd5e1;
+}
+
+.chat-layout {
+  display: flex;
+  height: calc(100dvh - 70px);
+}
+
+.chat-layout .chat-page {
+  height: 100%;
+  min-width: 0;
+  flex: 1;
+}
+
+.chat-sidebar {
+  display: none;
+  width: 260px;
+  flex-shrink: 0;
+  padding: 18px 13px;
+  background: #111827;
+  border-right: 1px solid #263147;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-sidebar.open {
+  display: flex;
+}
+
+.sidebar-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+}
+
+.sidebar-heading button {
+  font-size: 23px;
+  background: transparent;
+  color: #94a3b8;
+}
+
+.sidebar-new {
+  background: #123048;
+  color: #38bdf8;
+  border: 1px solid #23516d;
+  border-radius: 9px;
+  padding: 12px;
+  text-align: left;
+}
+
+.chat-sidebar input,
+.dataset-selector select {
+  width: 100%;
+  border: 1px solid #334155;
+  background: #0b1120;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 10px;
+  font: inherit;
+}
+
+.chat-list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.chat-item {
+  padding: 8px;
+  border-radius: 9px;
+  margin-bottom: 7px;
+}
+
+.chat-item.active {
+  background: #1e293b;
+}
+
+.chat-title {
+  background: none;
+  color: #e2e8f0;
+  width: 100%;
+  padding: 5px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-item-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 5px;
+}
+
+.chat-item-actions button {
+  color: #94a3b8;
+  font-size: 10px;
+  background: none;
+  padding: 4px;
+}
+
+.sidebar-empty,
+.chat-sidebar small {
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.theme-button {
+  padding: 9px;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 8px;
+}
+
+.chat-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+  border-bottom: 1px solid #263147;
+  flex-shrink: 0;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.chat-toolbar button,
+.dataset-paging button,
+.phase-status button,
+.edit-notice button {
+  background: #1e293b;
+  color: #cbd5e1;
+  border: 1px solid #334155;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 12px;
+}
+
+.chat-toolbar button:first-child {
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-toolbar button:last-child {
+  margin-left: auto;
+}
+
+.dataset-selector {
+  max-height: 260px;
+  overflow: auto;
+  padding: 14px 22px;
+  background: #111827;
+  border-bottom: 1px solid #334155;
+  flex-shrink: 0;
+}
+
+.dataset-selector > label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 7px 0;
+  font-size: 12px;
+}
+
+.dataset-selector select {
+  width: auto;
+  max-width: 75%;
+}
+
+.dataset-paging {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0;
+  font-size: 12px;
+}
+
+.dataset-selector fieldset {
+  border: 1px solid #334155;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+.dataset-selector legend {
+  font-size: 12px;
+  padding: 0 6px;
+}
+
+.dataset-selector fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.dataset-selector small {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.dataset-selector input {
+  accent-color: #38bdf8;
+}
+
+.dataset-selector p {
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.phase-status {
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 8px 0 12px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.phase-status p {
+  margin: 8px 0;
+}
+
+.phase-status small {
+  display: block;
+  color: #94a3b8;
+  margin-top: 7px;
+}
+
+.phase-status button {
+  margin: 4px 7px 4px 0;
+}
+
+.phase-status.ready,
+.phase-status.completed {
+  border-color: #22634e;
+  color: #76d7b4;
+}
+
+.phase-status.waiting_for_data,
+.phase-status.executing {
+  border-color: #215776;
+  color: #7dd3fc;
+}
+
+.phase-status.needs_clarification {
+  border-color: #7557a0;
+}
+
+.phase-status.not_ready {
+  border-color: #8a6427;
+  color: #f2c676;
+}
+
+.phase-status.failed {
+  border-color: #8b3939;
+  color: #fca5a5;
+}
+
+.phase-status.unsupported {
+  color: #b2bdcb;
+}
+
+.query-details {
+  margin: 12px 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.query-details summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+
+.query-details dl {
+  display: grid;
+  grid-template-columns: 95px minmax(0, 1fr);
+  gap: 7px;
+  padding: 10px;
+  background: #111827;
+  border-radius: 8px;
+}
+
+.query-details dd {
+  overflow-wrap: anywhere;
+  color: #cbd5e1;
+}
+
+.query-details pre,
+.chat-markdown pre {
+  overflow: auto;
+  max-width: 100%;
+  padding: 12px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.chat-markdown {
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+
+.chat-markdown p {
+  margin: 10px 0;
+}
+
+.chat-markdown h1,
+.chat-markdown h2,
+.chat-markdown h3 {
+  margin: 15px 0 8px;
+  font-size: 18px;
+}
+
+.chat-markdown ul,
+.chat-markdown ol {
+  padding-left: 22px;
+}
+
+.chat-markdown a {
+  color: #38bdf8;
+}
+
+.chat-markdown table {
+  display: block;
+  overflow: auto;
+  border-collapse: collapse;
+}
+
+.chat-markdown td,
+.chat-markdown th {
+  border: 1px solid #334155;
+  padding: 7px;
+}
+
+.message.assistant .message-content {
+  width: 100%;
+}
+
+.message-actions {
+  flex-wrap: wrap;
+}
+
+.message-action[aria-pressed="true"] {
+  color: #38bdf8;
+  background: #123048;
+}
+
+.integration-notice,
+.clarification-hint,
+.edit-notice {
+  font-size: 12px;
+  color: #a6b9cd;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+.edit-notice {
+  padding: 0 22px;
+}
+
+.copy-status {
+  font-size: 12px;
+  color: #7dd3fc;
+  margin-bottom: 10px;
+}
+
+.upload-controls {
+  border: 0;
+  min-width: 0;
+}
+
+.upload-controls .file-uploader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.composer-actions {
+  flex-wrap: wrap;
+}
+
+.selected-file-details strong {
+  max-width: 180px;
+}
+
+.sidebar-backdrop {
+  display: none;
+}
+
+/* Light theme */
+
+:root[data-theme="light"] .app,
+:root[data-theme="light"] .chat-page,
+:root[data-theme="light"] .composer-wrapper {
+  background: #f5f8fc;
+  color: #15243b;
+}
+
+:root[data-theme="light"] .navbar,
+:root[data-theme="light"] .chat-sidebar,
+:root[data-theme="light"] .composer,
+:root[data-theme="light"] .dataset-selector,
+:root[data-theme="light"] .suggested-list button {
+  background: #fff;
+  color: #15243b;
+}
+
+:root[data-theme="light"] .welcome-section h1,
+:root[data-theme="light"] .logo-name,
+:root[data-theme="light"] .chat-title,
+:root[data-theme="light"] .message-content,
+:root[data-theme="light"] .message-content > strong,
+:root[data-theme="light"] .composer textarea {
+  color: #15243b;
+}
+
+:root[data-theme="light"] .chat-item.active,
+:root[data-theme="light"] .message.user .message-content,
+:root[data-theme="light"] .query-details dl,
+:root[data-theme="light"] .query-details pre,
+:root[data-theme="light"] .chat-markdown pre {
+  background: #e7eff8;
+  color: #15243b;
+}
+
+:root[data-theme="light"] .chat-sidebar input,
+:root[data-theme="light"] .dataset-selector select {
+  background: #f5f8fc;
+  color: #15243b;
+}
+
+:root[data-theme="light"] .query-details dd,
+:root[data-theme="light"] .nav-links button,
+:root[data-theme="light"] .suggested-list button {
+  color: #334155;
+}
+
+:root[data-theme="light"] .phase-status {
+  color: #334155;
+}
+
+:root[data-theme="light"] .integration-notice,
+:root[data-theme="light"] .clarification-hint,
+:root[data-theme="light"] .edit-notice {
+  color: #475569;
+}
+
+/* Responsive layout */
+
+@media (max-width: 850px) {
+  .chat-sidebar {
+    position: fixed;
+    top: 70px;
+    bottom: 0;
+    left: 0;
+    z-index: 15;
+    box-shadow: 10px 0 40px #0007;
+  }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 70px 0 0;
+    z-index: 14;
+    background: #0008;
+  }
+
+  .chat-toolbar {
+    padding: 9px 12px;
+    gap: 8px;
+  }
+
+  .chat-toolbar span {
+    display: none;
+  }
+
+  .chat-toolbar button:first-child {
+    max-width: 65%;
+  }
+}
+
+@media (max-width: 700px) {
+  .chat-layout {
+    height: calc(100dvh - 62px);
+  }
+
+  .chat-sidebar {
+    top: 62px;
+  }
+
+  .sidebar-backdrop {
+    top: 62px;
+  }
+
+  .nav-links button {
+    font-size: 11px;
+  }
+
+  .message-actions {
+    gap: 3px;
+  }
+
+  .dataset-paging {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    animation: none !important;
+    transition: none !important;
+  }
+}
